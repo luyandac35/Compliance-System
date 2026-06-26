@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login & Register - CompliTrack SA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px 35px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+            .card h2 {
+                color: #1e3c72;
+                font-size: 1.8rem;
+                font-weight: 700;
+                margin-bottom: 5px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+                .card h2 i {
+                    color: #ffc107;
+                }
+
+            .card .sub {
+                color: #6c757d;
+                font-size: 0.95rem;
+                margin-bottom: 25px;
+            }
+
+            .card .home-link {
+                display: inline-block;
+                margin-bottom: 20px;
+                color: #1e3c72;
+                text-decoration: none;
+                font-weight: 500;
+            }
+
+                .card .home-link:hover {
+                    color: #ffc107;
+                }
+
+        .form-container {
+            transition: 0.3s;
+        }
+
+            .form-container.hidden {
+                display: none;
+            }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin: 18px 0 6px;
+            color: #1e3c72;
+        }
+
+        input[type="email"], input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: #ffc107;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255,193,7,0.3);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #ffc107;
+            color: #1e3c72;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+        }
+
+            .btn:hover {
+                background: #e0a800;
+            }
+
+            .btn:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin: 15px 0 5px;
+            display: none;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .toggle-link {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            color: #1e3c72;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+            .toggle-link:hover {
+                color: #ffc107;
+            }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-top: 2px solid #1e3c72;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        hr {
+            margin: 20px 0;
+            border: 0;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .text-muted {
+            color: #6c757d;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+    <div class="card">
+        <h2><i class="fas fa-shield-alt"></i> CompliTrack SA</h2>
+        <p class="sub" id="page-sub">Admin / Staff Login</p>
+        <a href="index.html" class="home-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+
+        <div id="auth-error" class="alert alert-error"></div>
+        <div id="auth-success" class="alert alert-success"></div>
+        <div id="auth-info" class="alert alert-info"></div>
+
+        <!-- Login -->
+        <div id="login-form-container" class="form-container">
+            <form id="login-form" onsubmit="return false;">
+                <label for="login-email">Email Address</label>
+                <input type="email" id="login-email" placeholder="admin@company.com" required />
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" placeholder="Enter your password" required />
+                <button type="submit" class="btn" id="login-btn">Sign In</button>
+            </form>
+            <a href="#" class="toggle-link" id="forgot-link">Forgot password?</a>
+            <hr />
+            <a href="#" class="toggle-link" id="show-register">Create an account</a>
+        </div>
+
+        <!-- Register -->
+        <div id="register-form-container" class="form-container hidden">
+            <form id="register-form" onsubmit="return false;">
+                <label for="reg-fullname">Full Name</label>
+                <input type="text" id="reg-fullname" placeholder="e.g. John Doe" required />
+                <label for="reg-email">Email Address</label>
+                <input type="email" id="reg-email" placeholder="you@company.com" required />
+                <label for="reg-password">Password</label>
+                <input type="password" id="reg-password" placeholder="Min. 6 characters" required minlength="6" />
+                <label for="reg-confirm">Confirm Password</label>
+                <input type="password" id="reg-confirm" placeholder="Re‑enter password" required />
+                <button type="submit" class="btn" id="register-btn">Create Account</button>
+            </form>
+            <a href="#" class="toggle-link" id="show-login">← Back to Login</a>
+        </div>
+
+        <!-- Forgot -->
+        <div id="forgot-container" class="form-container hidden">
+            <p class="text-muted">Enter your email and we’ll send you a reset link.</p>
+            <input type="email" id="forgot-email" placeholder="Email address" />
+            <button class="btn" id="forgot-btn" style="margin-top:10px;">Send Reset Link</button>
+            <a href="#" class="toggle-link" id="forgot-back">← Back to Login</a>
+        </div>
+    </div>
+
+    <script>
+        // ----- Supabase client (inline) -----
+        const SUPABASE_URL = "https://rlfywkvyjoydpbvprtdt.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZnl3a3Z5am95ZHBidnBydGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzQ2MTEsImV4cCI6MjA5NzkxMDYxMX0.oF3BnxQD0AE_47ypbIA39iV0FGICbXZJPwOgiZTcjMk";
+
+        const _db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ----- Helper functions -----
+        async function getProfile() {
+            const { data: { user } } = await _db.auth.getUser();
+            if (!user) return null;
+            const { data: profile, error } = await _db
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+            if (error) return null;
+            profile.user = user;
+            return profile;
+        }
+
+        function hideAlerts() {
+            document.getElementById('auth-error').style.display = 'none';
+            document.getElementById('auth-success').style.display = 'none';
+            document.getElementById('auth-info').style.display = 'none';
+        }
+        function showError(msg) {
+            const el = document.getElementById('auth-error');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('auth-success').style.display = 'none';
+            document.getElementById('auth-info').style.display = 'none';
+        }
+        function showSuccess(msg) {
+            const el = document.getElementById('auth-success');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('auth-error').style.display = 'none';
+            document.getElementById('auth-info').style.display = 'none';
+        }
+        function showInfo(msg) {
+            const el = document.getElementById('auth-info');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('auth-error').style.display = 'none';
+            document.getElementById('auth-success').style.display = 'none';
+        }
+
+        function showLogin() {
+            document.getElementById('login-form-container').classList.remove('hidden');
+            document.getElementById('register-form-container').classList.add('hidden');
+            document.getElementById('forgot-container').classList.add('hidden');
+            document.getElementById('page-sub').textContent = 'Admin / Staff Login';
+            hideAlerts();
+        }
+        function showRegister() {
+            document.getElementById('login-form-container').classList.add('hidden');
+            document.getElementById('register-form-container').classList.remove('hidden');
+            document.getElementById('forgot-container').classList.add('hidden');
+            document.getElementById('page-sub').textContent = 'Create your account';
+            hideAlerts();
+        }
+        function showForgot() {
+            document.getElementById('login-form-container').classList.add('hidden');
+            document.getElementById('register-form-container').classList.add('hidden');
+            document.getElementById('forgot-container').classList.remove('hidden');
+            document.getElementById('page-sub').textContent = 'Reset Password';
+            hideAlerts();
+        }
+
+        // Toggle links
+        document.getElementById('show-register').addEventListener('click', e => { e.preventDefault(); showRegister(); });
+        document.getElementById('show-login').addEventListener('click', e => { e.preventDefault(); showLogin(); });
+        document.getElementById('forgot-link').addEventListener('click', e => { e.preventDefault(); showForgot(); });
+        document.getElementById('forgot-back').addEventListener('click', e => { e.preventDefault(); showLogin(); });
+
+        // ----- LOGIN -----
+        document.getElementById('login-btn').addEventListener('click', async function () {
+            hideAlerts();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            if (!email || !password) { showError('Please enter email and password.'); return; }
+
+            this.innerHTML = '<span class="spinner"></span> Signing in...';
+            this.disabled = true;
+
+            const { error } = await _db.auth.signInWithPassword({ email, password });
+            if (error) {
+                showError(error.message);
+                this.textContent = 'Sign In';
+                this.disabled = false;
+                return;
+            }
+
+            const profile = await getProfile();
+            if (profile && profile.role === 'admin') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            await _db.auth.signOut();
+            showError('Access denied. Only admin users can log in.');
+            this.textContent = 'Sign In';
+            this.disabled = false;
+        });
+
+        document.getElementById('login-password').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('login-btn').click();
+        });
+
+        // ----- REGISTER (corrected) -----
+        document.getElementById('register-btn').addEventListener('click', async function () {
+            hideAlerts();
+            const fullName = document.getElementById('reg-fullname').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+
+            if (!fullName || !email || !password || !confirm) {
+                showError('Please fill in all fields.');
+                return;
+            }
+            if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
+            if (password !== confirm) { showError('Passwords do not match.'); return; }
+
+            this.innerHTML = '<span class="spinner"></span> Creating account...';
+            this.disabled = true;
+
+            const { data: signUpData, error: signUpError } = await _db.auth.signUp({
+                email,
+                password,
+                options: { data: { full_name: fullName } }  // this passes full_name to the trigger
+            });
+
+            if (signUpError) {
+                showError(signUpError.message);
+                this.textContent = 'Create Account';
+                this.disabled = false;
+                return;
+            }
+
+            // ✅ No manual profile insertion – the trigger will create it automatically
+            showSuccess('Account created successfully! Please check your email to confirm your address, then log in.');
+            this.textContent = 'Create Account';
+            this.disabled = false;
+
+            // After 4 seconds, switch to login
+            setTimeout(() => {
+                showLogin();
+                showInfo('You can now log in with your credentials.');
+            }, 4000);
+        });
+
+        document.getElementById('reg-confirm').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('register-btn').click();
+        });
+
+        // ----- FORGOT PASSWORD -----
+        document.getElementById('forgot-btn').addEventListener('click', async function () {
+            hideAlerts();
+            const email = document.getElementById('forgot-email').value.trim();
+            if (!email) { showError('Please enter your email address.'); return; }
+
+            this.innerHTML = '<span class="spinner"></span> Sending...';
+            this.disabled = true;
+
+            const { error } = await _db.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/login.html'
+            });
+            if (error) {
+                showError(error.message);
+            } else {
+                showSuccess('Password reset link sent to your email.');
+            }
+            this.textContent = 'Send Reset Link';
+            this.disabled = false;
+        });
+
+        document.getElementById('forgot-email').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('forgot-btn').click();
+        });
+
+        // ----- On load: redirect if already admin -----
+        (async function init() {
+            const profile = await getProfile();
+            if (profile && profile.role === 'admin') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            showLogin();
+        })();
+    </script>
+</body>
+</html>

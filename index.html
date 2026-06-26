@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CompliTrack SA – Employee Compliance & Job Board</title>
+
+    <!-- Bootstrap 5 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Chat widget styles (inline for simplicity) -->
+    <style>
+        /* Chat Button */
+        .chat-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #1e3c72;
+            color: #fff;
+            border: none;
+            font-size: 28px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            z-index: 9999;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .chat-toggle:hover {
+                transform: scale(1.08);
+                background: #2a5298;
+            }
+
+            .chat-toggle .fa-comment-dots {
+                animation: pulse 1.5s infinite;
+            }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Chat Window */
+        .chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            max-width: calc(100vw - 40px);
+            max-height: 500px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            z-index: 9999;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+            .chat-window.open {
+                display: flex;
+            }
+
+        .chat-header {
+            background: #1e3c72;
+            color: #fff;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+            .chat-header .close-chat {
+                background: none;
+                border: none;
+                color: #fff;
+                font-size: 20px;
+                cursor: pointer;
+            }
+
+        .chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            max-height: 350px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-message {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            line-height: 1.4;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+        }
+
+            .chat-message.bot {
+                background: #e9ecef;
+                align-self: flex-start;
+                border-bottom-left-radius: 4px;
+            }
+
+            .chat-message.user {
+                background: #1e3c72;
+                color: #fff;
+                align-self: flex-end;
+                border-bottom-right-radius: 4px;
+            }
+
+        .chat-input-area {
+            display: flex;
+            padding: 12px;
+            border-top: 1px solid #e0e0e0;
+            background: #fff;
+        }
+
+            .chat-input-area input {
+                flex: 1;
+                border: 1px solid #ced4da;
+                border-radius: 30px;
+                padding: 10px 16px;
+                font-size: 0.95rem;
+                outline: none;
+            }
+
+                .chat-input-area input:focus {
+                    border-color: #1e3c72;
+                    box-shadow: 0 0 0 3px rgba(30,60,114,0.15);
+                }
+
+            .chat-input-area button {
+                margin-left: 10px;
+                background: #1e3c72;
+                color: #fff;
+                border: none;
+                border-radius: 30px;
+                padding: 0 20px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: 0.2s;
+            }
+
+                .chat-input-area button:hover {
+                    background: #2a5298;
+                }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px;
+            background: #e9ecef;
+            border-radius: 16px;
+            align-self: flex-start;
+            max-width: 60px;
+        }
+
+            .typing-indicator span {
+                width: 8px;
+                height: 8px;
+                background: #888;
+                border-radius: 50%;
+                animation: blink 1.4s infinite both;
+            }
+
+                .typing-indicator span:nth-child(2) {
+                    animation-delay: 0.2s;
+                }
+
+                .typing-indicator span:nth-child(3) {
+                    animation-delay: 0.4s;
+                }
+
+        @keyframes blink {
+            0% {
+                opacity: 0.2;
+                transform: translateY(0);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translateY(-6px);
+            }
+
+            100% {
+                opacity: 0.2;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 576px) {
+            .chat-window {
+                bottom: 80px;
+                right: 10px;
+                width: calc(100vw - 20px);
+                max-height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shield-alt text-warning me-2"></i>CompliTrack SA
+            </a>
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="nav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="features.html">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#jobs-section">Jobs</a></li>
+                </ul>
+                <div class="d-flex gap-2 ms-lg-3">
+                    <span id="auth-status" class="badge bg-success d-none align-self-center me-2"><i class="fas fa-circle text-white-50 me-1"></i> Connected</span>
+                    <a href="login.html" class="btn btn-brand btn-sm" id="login-btn">Login</a>
+                    <a href="dashboard.html" class="btn btn-outline-brand btn-sm d-none" id="dashboard-btn">Dashboard</a>
+                    <button class="btn btn-outline-danger btn-sm d-none" id="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== HERO ========== -->
+    <section class="hero">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-7">
+                    <span class="badge bg-warning text-dark mb-3">Smart Employee Compliance Platform</span>
+                    <h1>Manage records, documents &amp; jobs from one secure hub.</h1>
+                    <p class="mt-3">
+                        CompliTrack SA helps businesses move away from paper files by storing employee details,
+                        uploading documents, tracking expiry dates, and now – posting job openings for your team.
+                    </p>
+                    <div class="mt-4 d-flex flex-wrap gap-2">
+                        <a href="login.html" class="btn btn-brand btn-lg">Get Started</a>
+                        <a href="features.html" class="btn btn-outline-light btn-lg">View Features</a>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="hero-card p-4">
+                        <h5 class="fw-bold">What companies can monitor</h5>
+                        <div class="d-flex align-items-center border-bottom py-3">
+                            <i class="fas fa-id-card fa-2x text-primary me-3"></i>
+                            <div><b>Employee Records</b><br /><small>IDs, passports, contacts &amp; positions.</small></div>
+                        </div>
+                        <div class="d-flex align-items-center border-bottom py-3">
+                            <i class="fas fa-bell fa-2x text-warning me-3"></i>
+                            <div><b>Expiry Alerts</b><br /><small>Permits, visas &amp; contracts.</small></div>
+                        </div>
+                        <div class="d-flex align-items-center py-3">
+                            <i class="fas fa-briefcase fa-2x text-success me-3"></i>
+                            <div><b>Job Board</b><br /><small>Post &amp; manage open positions.</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== JOBS SECTION ========== -->
+    <section id="jobs-section" class="section bg-soft">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title"><i class="fas fa-briefcase text-primary me-2"></i>Available Jobs</h2>
+                <p class="text-muted">Explore current openings or post a new position (Admin only)</p>
+                <!-- Supabase connection status badge -->
+                <div id="supabase-status" class="mt-2">
+                    <span class="badge bg-secondary"><i class="fas fa-spinner fa-spin me-1"></i> Checking connection…</span>
+                </div>
+            </div>
+
+            <!-- Admin Job Posting Form (visible only when logged in as admin) -->
+            <div id="admin-job-form" class="card shadow-sm mb-5 d-none">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-plus-circle me-2"></i>Post a New Job
+                </div>
+                <div class="card-body">
+                    <form id="job-form">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Job Title</label>
+                                <input type="text" id="job-title" class="form-control" placeholder="e.g. Senior Developer" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Company</label>
+                                <input type="text" id="job-company" class="form-control" placeholder="e.g. CompliTrack SA" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Location</label>
+                                <input type="text" id="job-location" class="form-control" placeholder="e.g. Cape Town / Remote" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Salary (optional)</label>
+                                <input type="text" id="job-salary" class="form-control" placeholder="e.g. R40,000 – R55,000" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Status</label>
+                                <select id="job-status" class="form-select">
+                                    <option value="open">Open</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Description</label>
+                                <textarea id="job-description" class="form-control" rows="3" placeholder="Describe the role, responsibilities, and requirements…" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Post Job</button>
+                                <button type="reset" class="btn btn-outline-secondary ms-2">Clear</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Job Listings -->
+            <div id="job-listings">
+                <div class="text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                    <p class="mt-2 text-muted">Loading jobs…</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+        <div class="container d-flex justify-content-between flex-wrap">
+            <div>
+                <b>CompliTrack SA</b><br />
+                <small>Employee compliance &amp; job board made simple.</small>
+            </div>
+            <div>
+                <a href="login.html">Client Login</a> &middot;
+                <a href="#jobs-section">Jobs</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== CHAT WIDGET ========== -->
+    <!-- Floating button -->
+    <button class="chat-toggle" id="chatToggle" aria-label="Open chat">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+
+    <!-- Chat window -->
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <span><i class="fas fa-robot me-2"></i>CompliBot</span>
+            <button class="close-chat" id="closeChat">&times;</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-message bot">👋 Hi there! I'm CompliBot, your digital assistant. Ask me anything about CompliTrack SA – features, how to get started, or where to find something.</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Type your message…" autocomplete="off">
+            <button id="chatSendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- ========== SCRIPTS ========== -->
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+    </script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+    <!-- Custom jobs script -->
+    <script src="js/jobs.js">
+    </script>
+
+    <!-- Chat widget script (inline for simplicity) -->
+    <script>
+        (function () {
+            const toggleBtn = document.getElementById('chatToggle');
+            const chatWindow = document.getElementById('chatWindow');
+            const closeBtn = document.getElementById('closeChat');
+            const messages = document.getElementById('chatMessages');
+            const input = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('chatSendBtn');
+
+            // Open/Close
+            toggleBtn.addEventListener('click', () => {
+                chatWindow.classList.toggle('open');
+                if (chatWindow.classList.contains('open')) {
+                    input.focus();
+                }
+            });
+            closeBtn.addEventListener('click', () => {
+                chatWindow.classList.remove('open');
+            });
+
+            // Send message
+            function sendMessage() {
+                const text = input.value.trim();
+                if (!text) return;
+                // Add user message
+                appendMessage('user', text);
+                input.value = '';
+                // Simulate bot response
+                showTyping();
+                setTimeout(() => {
+                    removeTyping();
+                    const reply = getBotReply(text);
+                    appendMessage('bot', reply);
+                }, 600 + Math.random() * 400);
+            }
+
+            sendBtn.addEventListener('click', sendMessage);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            // Append message
+            function appendMessage(sender, text) {
+                const div = document.createElement('div');
+                div.className = `chat-message ${sender}`;
+                div.innerHTML = text;
+                messages.appendChild(div);
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            // Typing indicator
+            function showTyping() {
+                const div = document.createElement('div');
+                div.className = 'typing-indicator';
+                div.id = 'typingIndicator';
+                div.innerHTML = '<span></span><span></span><span></span>';
+                messages.appendChild(div);
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function removeTyping() {
+                const el = document.getElementById('typingIndicator');
+                if (el) el.remove();
+            }
+
+            // Bot intelligence – simple keyword matching with a friendly personality
+            function getBotReply(input) {
+                const lower = input.toLowerCase();
+
+                // Greetings
+                if (/(hi|hello|hey|howdy|good morning|good afternoon|good evening)/.test(lower)) {
+                    return "Hey there! 😊 How can I help you with CompliTrack SA today? You can ask about features, how to get started, or anything else!";
+                }
+
+                // Features
+                if (/(feature|what can you do|capabilities|functionality)/.test(lower)) {
+                    return "We offer a complete employee compliance solution:\n• 📋 Employee records (IDs, passports, contacts)\n• 📎 Document upload & tracking (contracts, permits, visas)\n• ⏰ Expiry alerts for permits & contracts\n• 📊 Dashboard analytics (compliance, high-risk)\n• 💼 Job board – post and manage openings\n• 📄 Generate inspection-ready reports.\nAnything specific you'd like to know?";
+                }
+
+                // Getting started
+                if (/(start|begin|how to|sign up|register|create account)/.test(lower)) {
+                    return "To get started, simply click the **Login** button in the top right and then choose **Create an account**. Once your account is approved (or set as admin by your organisation), you'll have full access to manage employees, documents, and jobs. Need help with a specific step?";
+                }
+
+                // Login / admin
+                if (/(login|log in|sign in|admin|access)/.test(lower)) {
+                    return "You can log in by clicking the **Login** button at the top of the page. If you're an admin, you'll be taken to the Dashboard where you can manage everything. If you don't have an account yet, you can create one from the login page. Let me know if you're having trouble!";
+                }
+
+                // Jobs
+                if (/(job|vacancy|career|position|openings)/.test(lower)) {
+                    return "💼 Our job board lists all open positions. If you're an admin, you can also post new jobs from the Dashboard. Regular users can view and apply for jobs (if we enable that feature). Want to see current openings? Scroll down to the Jobs section on this page!";
+                }
+
+                // Employees / documents
+                if (/(employee|staff|personnel|document|upload|contract|permit|visa)/.test(lower)) {
+                    return "You can manage all employee records and documents securely in the system. Admins can add employees, upload documents (IDs, permits, contracts), and set expiry dates – the system will then generate alerts for upcoming renewals. Need more detail? Ask away!";
+                }
+
+                // Reports
+                if (/(report|inspection|audit|compliance score)/.test(lower)) {
+                    return "📊 The Reports section lets you generate compliance summaries for inspections. You'll see a table with each employee's status, missing documents, and expired permits. It's a great way to stay audit‑ready. Try it out from the Dashboard!";
+                }
+
+                // Help / support
+                if (/(help|support|assist|trouble|problem|issue)/.test(lower)) {
+                    return "I'm here to help! 😊 You can ask me about any feature, the registration process, or how to use the platform. If I can't answer, you can also reach out via the **Contact** page – our team will get back to you quickly.";
+                }
+
+                // Default / fallback
+                return "That's a great question! 🤔 I'm still learning, but I can point you to the right place. Try asking about features, getting started, login, jobs, or reports. Or you can visit the **Contact** page for more specific support.";
+            }
+
+            // On load, show a welcome message after 1 sec (if chat is closed, it will appear when opened)
+            setTimeout(() => {
+                // If no messages yet, add a friendly nudge
+                if (messages.children.length === 0) {
+                    appendMessage('bot', "👋 Hi! I'm CompliBot. Feel free to ask me anything about CompliTrack SA – I'm here to help!");
+                }
+            }, 1000);
+        })();
+    </script>
+</body>
+</html>

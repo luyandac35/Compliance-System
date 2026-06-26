@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - CompliTrack SA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            border-radius: 10px;
+            padding: 15px;
+            color: #fff;
+        }
+
+            .stat-card.primary {
+                background: linear-gradient(135deg, #4e73df, #224abe);
+            }
+
+            .stat-card.success {
+                background: linear-gradient(135deg, #1cc88a, #13855c);
+            }
+
+            .stat-card.warning {
+                background: linear-gradient(135deg, #f6c23e, #dda20a);
+            }
+
+            .stat-card.danger {
+                background: linear-gradient(135deg, #e74a3b, #be2617);
+            }
+
+        .card-header {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand text-primary fw-bold" href="/"><i class="fas fa-shield-alt text-warning me-2"></i>CompliTrack SA</a>
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="nav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="employees.html">Employees</a></li>
+                    <li class="nav-item"><a class="nav-link" href="documents.html">Documents</a></li>
+                    <li class="nav-item"><a class="nav-link" href="reports.html">Reports</a></li>
+                </ul>
+                <button class="btn btn-outline-danger btn-sm ms-lg-3" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main container -->
+    <div class="container-fluid mt-4" id="dashboard-content">
+        <div class="text-center py-5">
+            <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+            <p class="mt-3">Loading dashboard...</p>
+        </div>
+    </div>
+
+    <!-- Edit Job Modal -->
+    <div class="modal fade" id="jobEditModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Job</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="job-edit-form">
+                        <input type="hidden" id="edit-job-id" />
+                        <div class="mb-2"><label>Job Title</label><input type="text" id="edit-job-title" class="form-control" required /></div>
+                        <div class="mb-2"><label>Company</label><input type="text" id="edit-job-company" class="form-control" required /></div>
+                        <div class="mb-2"><label>Location</label><input type="text" id="edit-job-location" class="form-control" required /></div>
+                        <div class="mb-2"><label>Salary</label><input type="text" id="edit-job-salary" class="form-control" /></div>
+                        <div class="mb-2"><label>Description</label><textarea id="edit-job-description" class="form-control" rows="3" required></textarea></div>
+                        <div class="mb-2">
+                            <label>Status</label>
+                            <select id="edit-job-status" class="form-select">
+                                <option value="open">Open</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Update Job</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // IIFE to avoid global conflicts
+        (async function () {
+
+            const supabase = window.supabase.createClient(
+                "https://rlfywkvyjoydpbvprtdt.supabase.co",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZnl3a3Z5am95ZHBidnBydGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzQ2MTEsImV4cCI6MjA5NzkxMDYxMX0.oF3BnxQD0AE_47ypbIA39iV0FGICbXZJPwOgiZTcjMk"
+            );
+            console.log('✅ Supabase client ready');
+
+            const container = document.getElementById('dashboard-content');
+
+            // ---------- Helpers ----------
+            async function getMissingDocuments(employeeId, nationality) {
+                try {
+                    const { data: docs } = await supabase
+                        .from('documents')
+                        .select('doc_type')
+                        .eq('employee_id', employeeId);
+                    const existing = docs.map(d => d.doc_type);
+                    const required = ['CONTRACT'];
+                    if (nationality === 'South Africa') required.push('SA_ID');
+                    else required.push('PASSPORT', 'WORK_PERMIT');
+                    return required.filter(t => !existing.includes(t));
+                } catch (e) { return []; }
+            }
+
+            async function getExpiredPermits(employeeId) {
+                try {
+                    const today = new Date().toISOString().split('T')[0];
+                    const { data } = await supabase
+                        .from('documents')
+                        .select('doc_type, expiry_date')
+                        .eq('employee_id', employeeId)
+                        .in('doc_type', ['WORK_PERMIT', 'VISA'])
+                        .lt('expiry_date', today);
+                    return data || [];
+                } catch (e) { return []; }
+            }
+
+            // ---------- Render Dashboard ----------
+            async function renderDashboard() {
+                console.log('🔄 Rendering dashboard...');
+
+                try {
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    if (authError) throw new Error('Auth error: ' + authError.message);
+                    if (!user) {
+                        window.location.href = "login.html";
+                        return;
+                    }
+                    console.log('✅ User authenticated:', user.email);
+
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (profileError) console.warn('⚠️ Profile fetch error:', profileError);
+                    const isAdmin = profile && profile.role === 'admin';
+                    if (!isAdmin) {
+                        container.innerHTML = `
+                                <div class="text-center py-5">
+                                    <i class="fas fa-lock fa-4x text-danger mb-3"></i>
+                                    <h2>Access Denied</h2>
+                                    <p class="text-muted">You must be an administrator.</p>
+                                    <a href="index.html" class="btn btn-primary">Go Home</a>
+                                </div>
+                            `;
+                        return;
+                    }
+                    console.log('✅ Admin verified');
+
+                    // Build the UI
+                    container.innerHTML = `
+                            <!-- Stats Cards -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="stat-card primary"><h5><i class="fas fa-users me-2"></i>Total Employees</h5><h2 id="total-employees">0</h2></div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="stat-card success"><h5><i class="fas fa-check-circle me-2"></i>Compliant</h5><h2 id="compliant-count">0</h2></div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="stat-card warning"><h5><i class="fas fa-clock me-2"></i>Expired Permits</h5><h2 id="expired-count">0</h2></div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="stat-card danger"><h5><i class="fas fa-exclamation-triangle me-2"></i>High Risk</h5><h2 id="highrisk-count">0</h2></div>
+                                </div>
+                            </div>
+
+                            <!-- Chart & Alerts -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header">Compliance Overview</div>
+                                        <div class="card-body"><canvas id="complianceChart" height="200"></canvas></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header">Active Alerts</div>
+                                        <div class="card-body" id="alerts-list" style="max-height:250px;overflow-y:auto;">
+                                            <p class="text-muted">Loading alerts...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recent Employees Table -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <span><i class="fas fa-list me-2"></i>Recent Employees</span>
+                                            <a href="employees.html" class="btn btn-sm btn-primary">View All</a>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover mb-0">
+                                                    <thead><tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Position</th><th>Status</th></tr></thead>
+                                                    <tbody id="recent-employees-tbody">
+                                                        <tr><td colspan="5" class="text-center text-muted">Loading employees...</td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Post a New Job -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header bg-primary text-white">
+                                            <i class="fas fa-briefcase me-2"></i>Post a New Job
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="job-posting-form">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Job Title</label>
+                                                        <input type="text" id="job-title" class="form-control" placeholder="e.g. Senior Developer" required />
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Company</label>
+                                                        <input type="text" id="job-company" class="form-control" placeholder="e.g. CompliTrack SA" required />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Location</label>
+                                                        <input type="text" id="job-location" class="form-control" placeholder="e.g. Cape Town / Remote" required />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Salary (optional)</label>
+                                                        <input type="text" id="job-salary" class="form-control" placeholder="e.g. R40,000 – R55,000" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Status</label>
+                                                        <select id="job-status" class="form-select">
+                                                            <option value="open">Open</option>
+                                                            <option value="closed">Closed</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <label class="form-label fw-semibold">Description</label>
+                                                        <textarea id="job-description" class="form-control" rows="3" placeholder="Describe the role, responsibilities, and requirements…" required></textarea>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-2"></i>Post Job</button>
+                                                        <button type="reset" class="btn btn-outline-secondary ms-2">Clear</button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                            <div id="job-post-feedback" class="mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Manage Jobs Table -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <span><i class="fas fa-briefcase me-2"></i>Manage Jobs</span>
+                                            <span class="badge bg-info" id="job-count">0</span>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover mb-0">
+                                                    <thead>
+                                                        <tr><th>Title</th><th>Company</th><th>Location</th><th>Status</th><th>Posted</th><th>Actions</th></tr>
+                                                    </thead>
+                                                    <tbody id="jobs-table-body">
+                                                        <tr><td colspan="6" class="text-center text-muted">Loading jobs...</td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                    // Load all data
+                    await loadStats();
+                    await loadRecentEmployees();
+                    await loadJobsTable();
+
+                    // Set up job posting form
+                    document.getElementById('job-posting-form').addEventListener('submit', handleJobPost);
+
+                    // Set up job edit form
+                    document.getElementById('job-edit-form').addEventListener('submit', handleJobEdit);
+
+                } catch (err) {
+                    console.error('🔥 Dashboard error:', err);
+                    container.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h4><i class="fas fa-exclamation-circle"></i> Dashboard Error</h4>
+                                <p>${err.message}</p>
+                                <button class="btn btn-primary" onclick="location.reload()">Retry</button>
+                            </div>
+                        `;
+                }
+            }
+
+            // ---------- Job Posting Handler ----------
+            async function handleJobPost(e) {
+                e.preventDefault();
+                const title = document.getElementById('job-title').value.trim();
+                const company = document.getElementById('job-company').value.trim();
+                const location = document.getElementById('job-location').value.trim();
+                const salary = document.getElementById('job-salary').value.trim();
+                const description = document.getElementById('job-description').value.trim();
+                const status = document.getElementById('job-status').value;
+
+                if (!title || !company || !location || !description) {
+                    document.getElementById('job-post-feedback').innerHTML = `<div class="alert alert-danger">Please fill in all required fields.</div>`;
+                    return;
+                }
+
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    document.getElementById('job-post-feedback').innerHTML = `<div class="alert alert-danger">You must be logged in as admin.</div>`;
+                    return;
+                }
+
+                try {
+                    const { error } = await supabase
+                        .from('jobs')
+                        .insert([{
+                            title,
+                            company,
+                            location,
+                            salary: salary || null,
+                            description,
+                            status,
+                            user_id: user.id
+                        }]);
+
+                    if (error) throw error;
+
+                    document.getElementById('job-post-feedback').innerHTML = `<div class="alert alert-success">✅ Job posted successfully!</div>`;
+                    document.getElementById('job-posting-form').reset();
+                    loadJobsTable(); // refresh the jobs table
+                } catch (err) {
+                    console.error('Job post error:', err);
+                    document.getElementById('job-post-feedback').innerHTML = `<div class="alert alert-danger">Failed to post job: ${err.message}</div>`;
+                }
+            }
+
+            // ---------- Load Jobs Table ----------
+            async function loadJobsTable() {
+                const tbody = document.getElementById('jobs-table-body');
+                const countBadge = document.getElementById('job-count');
+                try {
+                    const { data: jobs, error } = await supabase
+                        .from('jobs')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    if (error) throw error;
+
+                    if (!jobs || jobs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No jobs posted.</td></tr>';
+                        countBadge.textContent = '0';
+                        return;
+                    }
+
+                    countBadge.textContent = jobs.length;
+                    tbody.innerHTML = jobs.map(job => `
+                            <tr>
+                                <td>${job.title}</td>
+                                <td>${job.company}</td>
+                                <td>${job.location || 'Remote'}</td>
+                                <td><span class="badge ${job.status === 'open' ? 'bg-success' : 'bg-secondary'}">${job.status}</span></td>
+                                <td>${new Date(job.created_at).toLocaleDateString()}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning edit-job-btn" data-id="${job.id}"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-danger delete-job-btn" data-id="${job.id}"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `).join('');
+
+                    // Attach events
+                    document.querySelectorAll('.edit-job-btn').forEach(btn => btn.addEventListener('click', () => openEditJobModal(btn.dataset.id)));
+                    document.querySelectorAll('.delete-job-btn').forEach(btn => btn.addEventListener('click', () => deleteJob(btn.dataset.id)));
+                } catch (err) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error loading jobs: ${err.message}</td></tr>`;
+                }
+            }
+
+            // ---------- Open Edit Modal ----------
+            async function openEditJobModal(jobId) {
+                try {
+                    const { data: job, error } = await supabase
+                        .from('jobs')
+                        .select('*')
+                        .eq('id', jobId)
+                        .single();
+                    if (error) throw error;
+                    document.getElementById('edit-job-id').value = job.id;
+                    document.getElementById('edit-job-title').value = job.title;
+                    document.getElementById('edit-job-company').value = job.company;
+                    document.getElementById('edit-job-location').value = job.location || '';
+                    document.getElementById('edit-job-salary').value = job.salary || '';
+                    document.getElementById('edit-job-description').value = job.description || '';
+                    document.getElementById('edit-job-status').value = job.status;
+                    new bootstrap.Modal(document.getElementById('jobEditModal')).show();
+                } catch (err) {
+                    alert('Error loading job: ' + err.message);
+                }
+            }
+
+            // ---------- Handle Job Edit ----------
+            async function handleJobEdit(e) {
+                e.preventDefault();
+                const id = document.getElementById('edit-job-id').value;
+                const payload = {
+                    title: document.getElementById('edit-job-title').value.trim(),
+                    company: document.getElementById('edit-job-company').value.trim(),
+                    location: document.getElementById('edit-job-location').value.trim(),
+                    salary: document.getElementById('edit-job-salary').value.trim(),
+                    description: document.getElementById('edit-job-description').value.trim(),
+                    status: document.getElementById('edit-job-status').value
+                };
+                try {
+                    const { error } = await supabase
+                        .from('jobs')
+                        .update(payload)
+                        .eq('id', id);
+                    if (error) throw error;
+                    bootstrap.Modal.getInstance(document.getElementById('jobEditModal')).hide();
+                    loadJobsTable();
+                } catch (err) {
+                    alert('Update failed: ' + err.message);
+                }
+            }
+
+            // ---------- Delete Job ----------
+            async function deleteJob(jobId) {
+                if (!confirm('Delete this job?')) return;
+                try {
+                    const { error } = await supabase
+                        .from('jobs')
+                        .delete()
+                        .eq('id', jobId);
+                    if (error) throw error;
+                    loadJobsTable();
+                } catch (err) {
+                    alert('Delete failed: ' + err.message);
+                }
+            }
+
+            // ---------- Stats, Alerts, Recent Employees (unchanged) ----------
+            let complianceChart = null;
+
+            async function loadStats() {
+                try {
+                    const { data: employees, error } = await supabase
+                        .from('employees')
+                        .select('id, full_name, nationality');
+                    if (error) throw new Error('Failed to fetch employees: ' + error.message);
+
+                    const total = employees ? employees.length : 0;
+                    let compliant = 0, expiredCount = 0, highRisk = 0, missingDocs = 0;
+
+                    let allAlerts = [];
+                    try {
+                        const { data } = await supabase.from('alerts').select('id, employee_id').eq('resolved', false);
+                        allAlerts = data || [];
+                    } catch (e) { console.warn('Alerts table missing:', e); }
+
+                    if (employees && employees.length) {
+                        for (const emp of employees) {
+                            const missing = await getMissingDocuments(emp.id, emp.nationality);
+                            const expired = await getExpiredPermits(emp.id);
+                            const unresolved = allAlerts.filter(a => a.employee_id === emp.id);
+                            if (missing.length) missingDocs++;
+                            expiredCount += expired.length;
+                            if (missing.length || expired.length || unresolved.length) highRisk++;
+                            else compliant++;
+                        }
+                    }
+
+                    document.getElementById('total-employees').textContent = total;
+                    document.getElementById('compliant-count').textContent = compliant;
+                    document.getElementById('expired-count').textContent = expiredCount;
+                    document.getElementById('highrisk-count').textContent = highRisk;
+
+                    const ctx = document.getElementById('complianceChart').getContext('2d');
+                    if (complianceChart) complianceChart.destroy();
+                    complianceChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Compliant', 'Expired Permits', 'Missing Docs', 'High Risk'],
+                            datasets: [{
+                                data: [compliant, expiredCount, missingDocs, highRisk],
+                                backgroundColor: ['#1cc88a', '#f6c23e', '#fd7e14', '#e74a3b']
+                            }]
+                        },
+                        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                    });
+                    console.log('✅ Stats loaded');
+
+                    await loadAlerts();
+                } catch (err) {
+                    console.error('Stats error:', err);
+                    document.getElementById('alerts-list').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+                }
+            }
+
+            async function loadAlerts() {
+                const container = document.getElementById('alerts-list');
+                try {
+                    const { data: alerts, error } = await supabase
+                        .from('alerts')
+                        .select('id, employee_id, description')
+                        .eq('resolved', false)
+                        .order('created_at', { ascending: false })
+                        .limit(10);
+                    if (error) throw error;
+
+                    if (!alerts || alerts.length === 0) {
+                        container.innerHTML = '<p class="text-success"><i class="fas fa-check-circle me-1"></i> No active alerts</p>';
+                        return;
+                    }
+
+                    const enriched = await Promise.all(alerts.map(async (a) => {
+                        const { data: emp } = await supabase.from('employees').select('full_name').eq('id', a.employee_id).single();
+                        return { ...a, employee_name: emp ? emp.full_name : 'Unknown' };
+                    }));
+
+                    container.innerHTML = enriched.map(a => `
+                            <div class="alert alert-warning py-2 mb-1">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                <strong>${a.employee_name}</strong>: ${a.description}
+                            </div>
+                        `).join('');
+                } catch (err) {
+                    container.innerHTML = `<p class="text-muted">Could not load alerts: ${err.message}</p>`;
+                }
+            }
+
+            async function loadRecentEmployees() {
+                const tbody = document.getElementById('recent-employees-tbody');
+                try {
+                    const { data: employees, error } = await supabase
+                        .from('employees')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(5);
+                    if (error) throw error;
+
+                    if (!employees || employees.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No employees found.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = employees.map(emp => `
+                            <tr>
+                                <td><strong>${emp.full_name}</strong></td>
+                                <td>${emp.id_passport_number}</td>
+                                <td>${emp.nationality}</td>
+                                <td>${emp.job_position || 'N/A'}</td>
+                                <td><span class="badge bg-success">Active</span></td>
+                            </tr>
+                        `).join('');
+                } catch (err) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error loading employees: ${err.message}</td></tr>`;
+                }
+            }
+
+            // ---------- Logout ----------
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                await supabase.auth.signOut();
+                window.location.href = "index.html";
+            });
+
+            // ---------- Start ----------
+            await renderDashboard();
+        })();
+    </script>
+
+</body>
+</html>

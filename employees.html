@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Employees - CompliTrack SA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand text-primary fw-bold" href="/"><i class="fas fa-shield-alt text-warning me-2"></i>CompliTrack SA</a>
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="nav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="employees.html">Employees</a></li>
+                    <li class="nav-item"><a class="nav-link" href="documents.html">Documents</a></li>
+                    <li class="nav-item"><a class="nav-link" href="reports.html">Reports</a></li>
+                </ul>
+                <button class="btn btn-outline-danger btn-sm ms-lg-3" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3><i class="fas fa-users"></i> Employee Management</h3>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#employeeModal">
+                <i class="fas fa-plus"></i> Add Employee
+            </button>
+        </div>
+        <div class="mb-3">
+            <a href="dashboard.html" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="employees-table">
+                        <thead>
+                            <tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Position</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Modal -->
+    <div class="modal fade" id="employeeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add/Edit Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="employee-form">
+                        <input type="hidden" id="emp-id" />
+                        <div class="mb-2"><label>Full Name</label><input type="text" id="full-name" class="form-control" required /></div>
+                        <div class="mb-2"><label>ID/Passport Number</label><input type="text" id="id-number" class="form-control" required /></div>
+                        <div class="mb-2"><label>Nationality</label><input type="text" id="nationality" class="form-control" required /></div>
+                        <div class="mb-2"><label>Phone</label><input type="text" id="phone" class="form-control" required /></div>
+                        <div class="mb-2"><label>Address</label><textarea id="address" class="form-control" rows="2"></textarea></div>
+                        <div class="mb-2"><label>Job Position</label><input type="text" id="position" class="form-control" required /></div>
+                        <div class="mb-2"><label>Employment Date</label><input type="date" id="emp-date" class="form-control" required /></div>
+                        <button type="submit" class="btn btn-primary w-100">Save Employee</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ---------- Supabase Client (scoped) ----------
+        (async function () {
+
+            const supabase = window.supabase.createClient(
+                "https://rlfywkvyjoydpbvprtdt.supabase.co",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZnl3a3Z5am95ZHBidnBydGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzQ2MTEsImV4cCI6MjA5NzkxMDYxMX0.oF3BnxQD0AE_47ypbIA39iV0FGICbXZJPwOgiZTcjMk"
+            );
+
+            console.log('✅ Supabase client ready');
+
+            // ---------- Auth & Admin Check ----------
+            async function checkAdmin() {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = "login.html";
+                    return false;
+                }
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+                if (error || !profile || profile.role !== 'admin') {
+                    alert('Access denied. Admin only.');
+                    window.location.href = "index.html";
+                    return false;
+                }
+                return true;
+            }
+
+            // ---------- Logout ----------
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                await supabase.auth.signOut();
+                window.location.href = "index.html";
+            });
+
+            // ---------- Load Employees ----------
+            async function loadEmployees() {
+                try {
+                    console.log('📋 Fetching employees...');
+                    const { data: employees, error } = await supabase
+                        .from('employees')
+                        .select('*')
+                        .order('full_name');
+                    if (error) throw error;
+                    const tbody = document.querySelector('#employees-table tbody');
+                    if (!employees || employees.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No employees yet.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = employees.map(emp => `
+                            <tr>
+                                <td>${emp.full_name}</td>
+                                <td>${emp.id_passport_number}</td>
+                                <td>${emp.nationality}</td>
+                                <td>${emp.job_position}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning edit-emp" data-id="${emp.id}"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-danger delete-emp" data-id="${emp.id}"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    // Attach events
+                    document.querySelectorAll('.edit-emp').forEach(btn => btn.addEventListener('click', () => editEmployee(btn.dataset.id)));
+                    document.querySelectorAll('.delete-emp').forEach(btn => btn.addEventListener('click', () => deleteEmployee(btn.dataset.id)));
+                    console.log('✅ Employees loaded:', employees.length);
+                } catch (err) {
+                    console.error('❌ Error loading employees:', err);
+                    alert('Failed to load employees: ' + err.message);
+                }
+            }
+
+            // ---------- Edit Employee ----------
+            async function editEmployee(id) {
+                try {
+                    const { data: emp, error } = await supabase
+                        .from('employees')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+                    if (error) throw error;
+                    if (!emp) return alert('Employee not found.');
+                    document.getElementById('emp-id').value = emp.id;
+                    document.getElementById('full-name').value = emp.full_name;
+                    document.getElementById('id-number').value = emp.id_passport_number;
+                    document.getElementById('nationality').value = emp.nationality;
+                    document.getElementById('phone').value = emp.phone;
+                    document.getElementById('address').value = emp.address || '';
+                    document.getElementById('position').value = emp.job_position;
+                    document.getElementById('emp-date').value = emp.employment_date.split('T')[0];
+                    new bootstrap.Modal(document.getElementById('employeeModal')).show();
+                } catch (err) {
+                    console.error('❌ Edit error:', err);
+                    alert('Error loading employee details.');
+                }
+            }
+
+            // ---------- Delete Employee ----------
+            async function deleteEmployee(id) {
+                if (!confirm('Delete this employee? All associated documents will also be removed.')) return;
+                try {
+                    const { error } = await supabase
+                        .from('employees')
+                        .delete()
+                        .eq('id', id);
+                    if (error) throw error;
+                    loadEmployees();
+                } catch (err) {
+                    console.error('❌ Delete error:', err);
+                    alert('Delete failed: ' + err.message);
+                }
+            }
+
+            // ---------- Save Employee (Add/Edit) ----------
+            document.getElementById('employee-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('emp-id').value;
+                const payload = {
+                    full_name: document.getElementById('full-name').value.trim(),
+                    id_passport_number: document.getElementById('id-number').value.trim(),
+                    nationality: document.getElementById('nationality').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    address: document.getElementById('address').value.trim(),
+                    job_position: document.getElementById('position').value.trim(),
+                    employment_date: document.getElementById('emp-date').value
+                };
+                try {
+                    console.log('💾 Saving employee:', payload);
+                    let result;
+                    if (id) {
+                        result = await supabase
+                            .from('employees')
+                            .update(payload)
+                            .eq('id', id);
+                    } else {
+                        result = await supabase
+                            .from('employees')
+                            .insert([payload]);
+                    }
+                    if (result.error) throw result.error;
+                    bootstrap.Modal.getInstance(document.getElementById('employeeModal')).hide();
+                    document.getElementById('employee-form').reset();
+                    document.getElementById('emp-id').value = '';
+                    loadEmployees();
+                    console.log('✅ Employee saved successfully');
+                } catch (err) {
+                    console.error('❌ Save error:', err);
+                    alert('Save failed: ' + err.message);
+                }
+            });
+
+            // ---------- Init ----------
+            if (await checkAdmin()) {
+                loadEmployees();
+            }
+
+        })();
+    </script>
+</body>
+</html>
