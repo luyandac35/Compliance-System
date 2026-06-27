@@ -6,40 +6,22 @@
     <title>About - CompliTrack SA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --primary: #1e3c72;
-            --primary-light: #2a5298;
-            --secondary: #f8c146;
-            --accent: #1cc88a;
-            --gray-bg: #f8f9fa;
-        }
-        * {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
+        /* Minimal custom styles to match the theme */
         body {
-            background: #ffffff;
-            color: #212529;
-        }
-
-        /* ─── Navbar ─── */
-        .navbar {
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
-            padding: 12px 0;
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .navbar-brand {
-            font-weight: 800;
-            font-size: 1.3rem;
+            font-weight: 700;
             letter-spacing: -0.5px;
-            color: var(--primary) !important;
+            color: #1e3c72 !important;
         }
         .navbar-brand i {
-            color: var(--secondary);
+            color: #f8c146;
         }
         .btn-brand {
-            background: var(--primary);
+            background: #1e3c72;
             color: #fff;
             font-weight: 600;
             padding: 8px 24px;
@@ -47,327 +29,22 @@
             transition: all 0.3s ease;
         }
         .btn-brand:hover {
-            background: var(--primary-light);
+            background: #2a5298;
             color: #fff;
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(30, 60, 114, 0.25);
         }
-        .btn-outline-brand {
-            border: 2px solid var(--primary);
-            color: var(--primary);
-            font-weight: 600;
-            padding: 8px 24px;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-        }
-        .btn-outline-brand:hover {
-            background: var(--primary);
-            color: #fff;
-            transform: translateY(-2px);
-        }
-        .nav-link {
-            font-weight: 500;
-            color: #495057 !important;
-            padding: 8px 16px !important;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-        .nav-link:hover {
-            background: rgba(30, 60, 114, 0.06);
-            color: var(--primary) !important;
-        }
-        .nav-link.active {
-            color: var(--primary) !important;
-            background: rgba(30, 60, 114, 0.08);
-            font-weight: 600;
-        }
-
-        /* ─── Hero ─── */
-        .about-hero {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 80px 0 60px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-        }
-        .about-hero .badge-brand {
-            background: var(--secondary);
-            color: #1e1e1e;
+        .section-title {
             font-weight: 700;
-            padding: 6px 18px;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            letter-spacing: 0.3px;
+            color: #1e3c72;
+            margin-bottom: 1.5rem;
         }
-        .about-hero h1 {
-            font-weight: 800;
-            font-size: 3rem;
-            line-height: 1.15;
-            color: var(--primary);
-            margin-top: 16px;
+        .bg-soft {
+            background: #e9ecef;
         }
-        .about-hero h1 span {
-            color: var(--secondary);
-        }
-        .about-hero .lead-text {
-            font-size: 1.2rem;
-            color: #495057;
-            max-width: 600px;
-            line-height: 1.7;
-        }
-        .hero-illustration {
-            background: var(--primary);
-            border-radius: 20px;
-            padding: 40px 30px;
-            color: #fff;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            min-height: 280px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .hero-illustration::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -30%;
-            width: 300px;
-            height: 300px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 50%;
-        }
-        .hero-illustration i {
-            font-size: 4rem;
-            margin-bottom: 16px;
-            color: var(--secondary);
-        }
-        .hero-illustration h3 {
-            font-weight: 700;
-            position: relative;
-            z-index: 1;
-        }
-        .hero-illustration p {
-            opacity: 0.85;
-            position: relative;
-            z-index: 1;
-            max-width: 300px;
-            margin: 0 auto;
-        }
-
-        /* ─── Stats ─── */
-        .stats-section {
+        .section {
             padding: 60px 0;
-            background: #fff;
         }
-        .stat-item {
-            text-align: center;
-            padding: 20px;
-        }
-        .stat-item .number {
-            font-size: 3rem;
-            font-weight: 800;
-            color: var(--primary);
-            line-height: 1;
-        }
-        .stat-item .number .counter {
-            display: inline-block;
-        }
-        .stat-item .label {
-            color: #6c757d;
-            font-weight: 500;
-            margin-top: 4px;
-            font-size: 0.95rem;
-        }
-        .stat-item .icon {
-            font-size: 2rem;
-            color: var(--secondary);
-            margin-bottom: 8px;
-        }
-
-        /* ─── Mission / Vision ─── */
-        .mission-section {
-            padding: 70px 0;
-            background: var(--gray-bg);
-        }
-        .mission-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 36px 30px;
-            height: 100%;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: 1px solid rgba(0, 0, 0, 0.04);
-        }
-        .mission-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-        }
-        .mission-card .icon-circle {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.6rem;
-            margin-bottom: 18px;
-        }
-        .mission-card .icon-circle.primary {
-            background: rgba(30, 60, 114, 0.1);
-            color: var(--primary);
-        }
-        .mission-card .icon-circle.success {
-            background: rgba(28, 200, 138, 0.12);
-            color: var(--accent);
-        }
-        .mission-card .icon-circle.warning {
-            background: rgba(248, 193, 70, 0.15);
-            color: #d4a00a;
-        }
-        .mission-card h4 {
-            font-weight: 700;
-            color: var(--primary);
-        }
-        .mission-card p {
-            color: #6c757d;
-            line-height: 1.7;
-        }
-
-        /* ─── Team ─── */
-        .team-section {
-            padding: 70px 0;
-            background: #fff;
-        }
-        .team-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 30px 20px 24px;
-            text-align: center;
-            border: 1px solid #e9ecef;
-            transition: all 0.3s ease;
-            height: 100%;
-        }
-        .team-card:hover {
-            border-color: var(--primary);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
-            transform: translateY(-4px);
-        }
-        .team-card .avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 0 auto 14px;
-            box-shadow: 0 4px 14px rgba(30, 60, 114, 0.2);
-        }
-        .team-card h5 {
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 2px;
-        }
-        .team-card .role {
-            color: #6c757d;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        .team-card .bio {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-top: 8px;
-            line-height: 1.5;
-        }
-
-        /* ─── Values ─── */
-        .values-section {
-            padding: 70px 0;
-            background: var(--gray-bg);
-        }
-        .value-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
-            padding: 20px;
-            background: #fff;
-            border-radius: 12px;
-            border-left: 4px solid var(--secondary);
-            transition: box-shadow 0.2s ease;
-        }
-        .value-item:hover {
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-        }
-        .value-item .num {
-            font-weight: 800;
-            font-size: 1.8rem;
-            color: var(--secondary);
-            line-height: 1;
-            min-width: 40px;
-        }
-        .value-item h6 {
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 2px;
-        }
-        .value-item p {
-            color: #6c757d;
-            font-size: 0.9rem;
-            margin: 0;
-            line-height: 1.5;
-        }
-
-        /* ─── CTA ─── */
-        .cta-section {
-            padding: 60px 0;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: #fff;
-            text-align: center;
-        }
-        .cta-section h2 {
-            font-weight: 800;
-        }
-        .cta-section p {
-            opacity: 0.85;
-            max-width: 500px;
-            margin: 8px auto 24px;
-        }
-        .btn-cta {
-            background: var(--secondary);
-            color: var(--primary);
-            font-weight: 700;
-            padding: 12px 40px;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            border: none;
-            font-size: 1rem;
-        }
-        .btn-cta:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-            color: var(--primary);
-            background: #fcd45a;
-        }
-        .btn-cta-outline {
-            background: transparent;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: #fff;
-            font-weight: 600;
-            padding: 12px 40px;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-        }
-        .btn-cta-outline:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: #fff;
-            color: #fff;
-        }
-
-        /* ─── Footer ─── */
         .footer {
             background: #1a1a2e;
             color: rgba(255, 255, 255, 0.7);
@@ -378,255 +55,24 @@
         .footer a {
             color: rgba(255, 255, 255, 0.6);
             text-decoration: none;
-            transition: color 0.2s;
         }
         .footer a:hover {
             color: #fff;
         }
-        .footer .brand-text {
-            color: #fff;
-            font-weight: 700;
+        .lead {
+            font-size: 1.2rem;
+            color: #495057;
         }
-
-        /* ─── Chat Widget (from homepage) ─── */
-        .chat-toggle {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #1e3c72;
-            color: #fff;
-            border: none;
-            font-size: 28px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-            z-index: 9999;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .chat-toggle:hover {
-            transform: scale(1.08);
-            background: #2a5298;
-        }
-        .chat-toggle .fa-comment-dots {
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
-        .chat-window {
-            position: fixed;
-            bottom: 100px;
-            right: 30px;
-            width: 380px;
-            max-width: calc(100vw - 40px);
-            max-height: 500px;
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-            display: none;
-            flex-direction: column;
-            z-index: 9999;
-            overflow: hidden;
-            border: 1px solid #e0e0e0;
-            transition: all 0.3s ease;
-        }
-        .chat-window.open { display: flex; }
-        .chat-header {
-            background: #1e3c72;
-            color: #fff;
-            padding: 14px 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-        }
-        .chat-header .close-chat {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        .chat-messages {
-            flex: 1;
-            padding: 16px;
-            overflow-y: auto;
-            background: #f8f9fa;
-            max-height: 350px;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .chat-message {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 16px;
-            line-height: 1.5;
-            font-size: 0.95rem;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-        }
-        .chat-message.bot {
-            background: #e9ecef;
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-        .chat-message.user {
-            background: #1e3c72;
-            color: #fff;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-        .chat-message .email {
-            background: #d4edda;
-            color: #155724;
-            padding: 2px 10px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-family: monospace;
-            font-size: 1rem;
-        }
-        .chat-input-area {
-            display: flex;
-            padding: 12px;
-            border-top: 1px solid #e0e0e0;
-            background: #fff;
-        }
-        .chat-input-area input {
-            flex: 1;
-            border: 1px solid #ced4da;
-            border-radius: 30px;
-            padding: 10px 16px;
-            font-size: 0.95rem;
-            outline: none;
-        }
-        .chat-input-area input:focus {
-            border-color: #1e3c72;
-            box-shadow: 0 0 0 3px rgba(30,60,114,0.15);
-        }
-        .chat-input-area button {
-            margin-left: 10px;
-            background: #1e3c72;
-            color: #fff;
-            border: none;
-            border-radius: 30px;
-            padding: 0 20px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .chat-input-area button:hover {
-            background: #2a5298;
-        }
-        .typing-indicator {
-            display: flex;
-            gap: 4px;
-            padding: 8px 12px;
-            background: #e9ecef;
-            border-radius: 16px;
-            align-self: flex-start;
-            max-width: 60px;
-        }
-        .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: #888;
-            border-radius: 50%;
-            animation: blink 1.4s infinite both;
-        }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink {
-            0% { opacity: 0.2; transform: translateY(0); }
-            50% { opacity: 1; transform: translateY(-6px); }
-            100% { opacity: 0.2; transform: translateY(0); }
-        }
-        .quick-replies {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding: 4px 16px 12px 16px;
-            background: #f8f9fa;
-            border-top: 1px solid #eee;
-        }
-        .quick-replies button {
-            background: #e9ecef;
-            border: none;
-            border-radius: 50px;
-            padding: 5px 14px;
-            font-size: 0.8rem;
+        h3 {
             color: #1e3c72;
-            cursor: pointer;
-            transition: 0.2s;
-            font-weight: 500;
-        }
-        .quick-replies button:hover {
-            background: #1e3c72;
-            color: #fff;
-        }
-        @media (max-width: 576px) {
-            .chat-window {
-                bottom: 80px;
-                right: 10px;
-                width: calc(100vw - 20px);
-                max-height: 60vh;
-            }
-            .quick-replies button { font-size: 0.7rem; padding: 4px 10px; }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .about-hero h1 { font-size: 2.2rem; }
-            .about-hero { padding: 50px 0 40px; }
-            .hero-illustration { min-height: 200px; padding: 30px 20px; margin-top: 20px; }
-            .stat-item .number { font-size: 2.2rem; }
-            .stat-item { padding: 12px; }
-            .mission-card { padding: 24px 20px; }
-            .value-item { padding: 16px; }
-            .team-card .avatar { width: 64px; height: 64px; font-size: 1.6rem; }
-            .btn-cta, .btn-cta-outline { padding: 10px 28px; font-size: 0.9rem; }
-        }
-        @media (max-width: 576px) {
-            .about-hero h1 { font-size: 1.8rem; }
-            .about-hero .lead-text { font-size: 1rem; }
-            .stats-section { padding: 40px 0; }
-            .stat-item .number { font-size: 1.8rem; }
-        }
-
-        /* Animations */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-on-load { animation: fadeUp 0.6s ease forwards; }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
-        .delay-5 { animation-delay: 0.5s; }
-        .opacity-0 { opacity: 0; }
-        .section-title-line {
-            width: 60px;
-            height: 4px;
-            background: var(--secondary);
-            border-radius: 4px;
-            margin: 8px auto 20px;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
 
     <!-- ========== NAVBAR ========== -->
-    <nav class="navbar navbar-expand-lg bg-white sticky-top">
+    <nav class="navbar navbar-expand-lg bg-white sticky-top shadow-sm">
         <div class="container">
             <a class="navbar-brand" href="/">
                 <i class="fas fa-shield-alt me-2"></i>CompliTrack SA
@@ -640,214 +86,35 @@
                     <li class="nav-item"><a class="nav-link active" href="about.html">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="features.html">Features</a></li>
                     <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
-                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
                 </ul>
-                <div class="d-flex gap-2 ms-lg-3" id="auth-buttons">
-                    <!-- dynamically filled -->
-                </div>
+                <a href="login.html" class="btn btn-brand ms-lg-3">Login</a>
             </div>
         </div>
     </nav>
 
-    <!-- ========== ABOUT HERO ========== -->
-    <section class="about-hero">
+    <!-- ========== ABOUT SECTION ========== -->
+    <section class="section bg-soft">
         <div class="container">
-            <div class="row align-items-center g-5">
-                <div class="col-lg-7">
-                    <span class="badge-brand"><i class="fas fa-info-circle me-1"></i> About Us</span>
-                    <h1 class="opacity-0 animate-on-load">
-                        Empowering <span>Compliance</span><br />Through Innovation
-                    </h1>
-                    <p class="lead-text opacity-0 animate-on-load delay-1">
-                        CompliTrack SA is a web-based employee compliance platform that helps companies
-                        store, manage, and track employee information digitally – eliminating paper files
-                        and simplifying inspections.
-                    </p>
-                    <div class="d-flex flex-wrap gap-3 mt-4 opacity-0 animate-on-load delay-2">
-                        <a href="#mission" class="btn btn-brand">Our Mission</a>
-                        <a href="#team" class="btn btn-outline-brand">Meet the Team</a>
-                    </div>
-                </div>
-                <div class="col-lg-5">
-                    <div class="hero-illustration opacity-0 animate-on-load delay-3">
-                        <i class="fas fa-shield-alt"></i>
-                        <h3>Trusted Compliance</h3>
-                        <p>Helping businesses stay audit‑ready with digital record‑keeping.</p>
-                        <div class="mt-3 d-flex gap-3 justify-content-center">
-                            <span><i class="fas fa-check-circle text-success me-1"></i> 99.9% Uptime</span>
-                            <span><i class="fas fa-lock me-1"></i> Secure</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <h1 class="section-title">About CompliTrack SA</h1>
+            <p class="lead">
+                CompliTrack SA is a web‑based employee compliance platform that helps companies
+                store and manage employee information digitally.
+            </p>
         </div>
     </section>
 
-    <!-- ========== STATS with live Supabase data ========== -->
-    <section class="stats-section" id="stats-section">
+    <!-- ========== PROBLEM & SOLUTION ========== -->
+    <section class="section">
         <div class="container">
-            <div class="row g-3" id="stats-row">
-                <div class="col-6 col-md-3 stat-item opacity-0 animate-on-load delay-1">
-                    <div class="icon"><i class="fas fa-users"></i></div>
-                    <div class="number"><span class="counter" id="stat-employees" data-target="0">0</span></div>
-                    <div class="label">Employees Managed</div>
-                </div>
-                <div class="col-6 col-md-3 stat-item opacity-0 animate-on-load delay-2">
-                    <div class="icon"><i class="fas fa-file-alt"></i></div>
-                    <div class="number"><span class="counter" id="stat-documents" data-target="0">0</span></div>
-                    <div class="label">Documents Stored</div>
-                </div>
-                <div class="col-6 col-md-3 stat-item opacity-0 animate-on-load delay-3">
-                    <div class="icon"><i class="fas fa-check-circle"></i></div>
-                    <div class="number"><span class="counter" id="stat-compliance" data-target="0">0</span>%</div>
-                    <div class="label">Compliance Rate</div>
-                </div>
-                <div class="col-6 col-md-3 stat-item opacity-0 animate-on-load delay-4">
-                    <div class="icon"><i class="fas fa-building"></i></div>
-                    <div class="number"><span class="counter" id="stat-companies" data-target="50">0</span>+</div>
-                    <div class="label">Companies Trust Us</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== MISSION & VISION ========== -->
-    <section class="mission-section" id="mission">
-        <div class="container">
-            <div class="text-center mb-5">
-                <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold px-3 py-2">Our Foundation</span>
-                <h2 class="fw-bold mt-2" style="color: var(--primary);">Mission, Vision &amp; Values</h2>
-                <div class="section-title-line"></div>
-                <p class="text-muted" style="max-width: 600px; margin: 0 auto;">Driven by a commitment to simplify compliance management for South African businesses.</p>
-            </div>
             <div class="row g-4">
-                <div class="col-md-4 opacity-0 animate-on-load delay-1">
-                    <div class="mission-card">
-                        <div class="icon-circle primary"><i class="fas fa-bullseye"></i></div>
-                        <h4>Our Mission</h4>
-                        <p>To provide businesses with a secure, intuitive platform that simplifies employee compliance management, reduces administrative burden, and ensures audit readiness.</p>
-                    </div>
+                <div class="col-md-6">
+                    <h3><i class="fas fa-exclamation-triangle text-warning me-2"></i>Problem</h3>
+                    <p>Many businesses still use paper files, lose documents, forget expiry dates and struggle during inspections.</p>
                 </div>
-                <div class="col-md-4 opacity-0 animate-on-load delay-2">
-                    <div class="mission-card">
-                        <div class="icon-circle success"><i class="fas fa-eye"></i></div>
-                        <h4>Our Vision</h4>
-                        <p>To become the leading compliance management platform in South Africa, empowering organisations to focus on growth while we handle the paperwork.</p>
-                    </div>
+                <div class="col-md-6">
+                    <h3><i class="fas fa-check-circle text-success me-2"></i>Solution</h3>
+                    <p>The website provides a secure dashboard where HR can manage employees, upload documents, track expiry dates and generate reports.</p>
                 </div>
-                <div class="col-md-4 opacity-0 animate-on-load delay-3">
-                    <div class="mission-card">
-                        <div class="icon-circle warning"><i class="fas fa-heart"></i></div>
-                        <h4>Our Values</h4>
-                        <p>Integrity, innovation, and customer-centricity. We believe in transparent, secure solutions that genuinely help our clients succeed.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== VALUES LIST ========== -->
-    <section class="values-section">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h3 class="fw-bold" style="color: var(--primary);">What We Stand For</h3>
-                <div class="section-title-line"></div>
-            </div>
-            <div class="row g-3">
-                <div class="col-md-6 opacity-0 animate-on-load delay-1">
-                    <div class="value-item">
-                        <div class="num">01</div>
-                        <div>
-                            <h6>Security First</h6>
-                            <p>Your data is encrypted and stored securely – we treat every record with the highest level of confidentiality.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 opacity-0 animate-on-load delay-2">
-                    <div class="value-item">
-                        <div class="num">02</div>
-                        <div>
-                            <h6>Simplicity</h6>
-                            <p>We believe compliance tools should be easy to use. Our interface is designed for HR professionals, not IT experts.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 opacity-0 animate-on-load delay-3">
-                    <div class="value-item">
-                        <div class="num">03</div>
-                        <div>
-                            <h6>Reliability</h6>
-                            <p>With 99.9% uptime and daily backups, you can trust that your records are always available when you need them.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 opacity-0 animate-on-load delay-4">
-                    <div class="value-item">
-                        <div class="num">04</div>
-                        <div>
-                            <h6>South African Focus</h6>
-                            <p>Built specifically for South African compliance requirements – from ID validation to work permit tracking.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== TEAM ========== -->
-    <section class="team-section" id="team">
-        <div class="container">
-            <div class="text-center mb-5">
-                <span class="badge bg-success bg-opacity-10 text-success fw-semibold px-3 py-2">The People Behind It</span>
-                <h2 class="fw-bold mt-2" style="color: var(--primary);">Meet Our Team</h2>
-                <div class="section-title-line"></div>
-                <p class="text-muted" style="max-width: 500px; margin: 0 auto;">Passionate professionals dedicated to making compliance effortless.</p>
-            </div>
-            <div class="row g-4 justify-content-center">
-                <div class="col-sm-6 col-md-3 opacity-0 animate-on-load delay-1">
-                    <div class="team-card">
-                        <div class="avatar">MS</div>
-                        <h5>Mvelo Siyamthanda</h5>
-                        <div class="role">Founder &amp; CEO</div>
-                        <p class="bio">15+ years in HR tech. Passionate about simplifying compliance for South African businesses.</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-md-3 opacity-0 animate-on-load delay-2">
-                    <div class="team-card">
-                        <div class="avatar">NP</div>
-                        <h5>Nosipho Phiri</h5>
-                        <div class="role">Head of Product</div>
-                        <p class="bio">Former HR manager who turned product builder. She designs tools that HR teams actually love.</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-md-3 opacity-0 animate-on-load delay-3">
-                    <div class="team-card">
-                        <div class="avatar">TM</div>
-                        <h5>Thabo Mokoena</h5>
-                        <div class="role">Lead Developer</div>
-                        <p class="bio">Full‑stack engineer with a security focus. He ensures your data is safe and systems are fast.</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-md-3 opacity-0 animate-on-load delay-4">
-                    <div class="team-card">
-                        <div class="avatar">LK</div>
-                        <h5>Lerato Khumalo</h5>
-                        <div class="role">Compliance Specialist</div>
-                        <p class="bio">Expert in South African labour law and immigration. She makes sure we stay compliant with regulations.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== CTA ========== -->
-    <section class="cta-section">
-        <div class="container">
-            <h2 class="opacity-0 animate-on-load">Ready to Simplify Compliance?</h2>
-            <p class="opacity-0 animate-on-load delay-1">Join hundreds of companies already using CompliTrack SA to manage employee records and stay inspection‑ready.</p>
-            <div class="d-flex flex-wrap gap-3 justify-content-center opacity-0 animate-on-load delay-2">
-                <a href="register.html" class="btn btn-cta"><i class="fas fa-rocket me-2"></i>Get Started Free</a>
-                <a href="contact.html" class="btn btn-cta-outline"><i class="fas fa-envelope me-2"></i>Contact Sales</a>
             </div>
         </div>
     </section>
@@ -855,257 +122,15 @@
     <!-- ========== FOOTER ========== -->
     <footer class="footer">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6 text-md-start">
-                    <span class="brand-text"><i class="fas fa-shield-alt me-2 text-warning"></i>CompliTrack SA</span>
-                    <span class="d-block d-md-inline ms-md-3 text-white-50" style="font-size:0.85rem;">&copy; 2026 All rights reserved.</span>
-                </div>
-                <div class="col-md-6 text-md-end mt-2 mt-md-0">
-                    <a href="about.html" class="me-3">About</a>
-                    <a href="features.html" class="me-3">Features</a>
-                    <a href="contact.html">Contact</a>
-                </div>
-            </div>
+            <span><i class="fas fa-shield-alt me-2 text-warning"></i>CompliTrack SA &copy; 2026</span>
+            <span class="mx-3">|</span>
+            <a href="about.html">About</a>
+            <a href="features.html" class="ms-3">Features</a>
+            <a href="contact.html" class="ms-3">Contact</a>
         </div>
     </footer>
 
-    <!-- ========== CHAT WIDGET ========== -->
-    <button class="chat-toggle" id="chatToggle" aria-label="Open chat">
-        <i class="fas fa-comment-dots"></i>
-    </button>
-    <div class="chat-window" id="chatWindow">
-        <div class="chat-header">
-            <span><i class="fas fa-robot me-2"></i>CompliBot</span>
-            <button class="close-chat" id="closeChat">&times;</button>
-        </div>
-        <div class="chat-messages" id="chatMessages">
-            <div class="chat-message bot">👋 Hi there! I'm CompliBot. Ask me about our platform, features, or how to get started.</div>
-        </div>
-        <div class="quick-replies" id="quickReplies">
-            <button data-quick="What does CompliTrack SA do?">About</button>
-            <button data-quick="How do I get started?">Get Started</button>
-            <button data-quick="What features do you offer?">Features</button>
-            <button data-quick="Is my data secure?">Security</button>
-        </div>
-        <div class="chat-input-area">
-            <input type="text" id="chatInput" placeholder="Type your message…" autocomplete="off">
-            <button id="chatSendBtn"><i class="fas fa-paper-plane"></i></button>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
-    </script>
-    <script>
-        (function() {
-            // ─── Supabase client ───
-            const supabase = window.supabase.createClient(
-                "https://rlfywkvyjoydpbvprtdt.supabase.co",
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZnl3a3Z5am95ZHBidnBydGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzQ2MTEsImV4cCI6MjA5NzkxMDYxMX0.oF3BnxQD0AE_47ypbIA39iV0FGICbXZJPwOgiZTcjMk"
-            );
-
-            // ─── Auth-aware navbar ───
-            async function updateNavbar() {
-                const authDiv = document.getElementById('auth-buttons');
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    // Check role (admin or not)
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('role')
-                        .eq('id', user.id)
-                        .single();
-                    const isAdmin = profile && profile.role === 'admin';
-                    authDiv.innerHTML = `
-                        <span class="badge bg-success d-flex align-items-center me-2"><i class="fas fa-circle text-white-50 me-1"></i> Logged in</span>
-                        <a href="dashboard.html" class="btn btn-brand btn-sm">Dashboard</a>
-                        <button class="btn btn-outline-danger btn-sm" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                    `;
-                    document.getElementById('logoutBtn').addEventListener('click', async () => {
-                        await supabase.auth.signOut();
-                        location.reload();
-                    });
-                } else {
-                    authDiv.innerHTML = `
-                        <a href="login.html" class="btn btn-brand btn-sm">Login</a>
-                        <a href="register.html" class="btn btn-outline-brand btn-sm">Sign Up</a>
-                    `;
-                }
-            }
-
-            // ─── Live stats from Supabase ───
-            async function loadStats() {
-                try {
-                    // Fetch total employees
-                    const { count: empCount, error: empErr } = await supabase
-                        .from('employees')
-                        .select('*', { count: 'exact', head: true });
-                    if (empErr) throw empErr;
-
-                    // Fetch total documents
-                    const { count: docCount, error: docErr } = await supabase
-                        .from('documents')
-                        .select('*', { count: 'exact', head: true });
-                    if (docErr) throw docErr;
-
-                    // Calculate compliance rate: % of employees with valid passport (or compliant status)
-                    // We'll fetch employees with a valid passport (expiry > today) or manual compliant
-                    const { data: employees, error: empDataErr } = await supabase
-                        .from('employees')
-                        .select('id, compliance_status');
-                    if (empDataErr) throw empDataErr;
-
-                    // Fetch passport expiry dates
-                    const empIds = employees.map(e => e.id);
-                    const { data: passports, error: passErr } = await supabase
-                        .from('documents')
-                        .select('employee_id, expiry_date')
-                        .eq('doc_type', 'PASSPORT')
-                        .in('employee_id', empIds);
-                    if (passErr) throw passErr;
-
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    let compliantCount = 0;
-                    const expiryMap = {};
-                    passports.forEach(p => { expiryMap[p.employee_id] = p.expiry_date; });
-
-                    employees.forEach(emp => {
-                        const manual = emp.compliance_status;
-                        const expiry = expiryMap[emp.id] || null;
-                        if (manual === 'compliant') {
-                            compliantCount++;
-                        } else if (manual === 'noncompliant') {
-                            // not counted
-                        } else {
-                            // auto: valid if expiry exists and is in future
-                            if (expiry) {
-                                const expDate = new Date(expiry);
-                                expDate.setHours(0, 0, 0, 0);
-                                if (expDate >= today) compliantCount++;
-                            }
-                        }
-                    });
-
-                    const complianceRate = empCount > 0 ? Math.round((compliantCount / empCount) * 100) : 0;
-
-                    // Update DOM
-                    document.getElementById('stat-employees').textContent = empCount || 0;
-                    document.getElementById('stat-documents').textContent = docCount || 0;
-                    document.getElementById('stat-compliance').textContent = complianceRate;
-                    // Companies stat is static (50+)
-
-                } catch (err) {
-                    console.warn('Could not load live stats:', err);
-                    // Fallback to static values if error
-                    document.getElementById('stat-employees').textContent = '500+';
-                    document.getElementById('stat-documents').textContent = '1200+';
-                    document.getElementById('stat-compliance').textContent = '98';
-                }
-            }
-
-            // ─── Chat widget (same as homepage) ───
-            function initChat() {
-                const toggleBtn = document.getElementById('chatToggle');
-                const chatWindow = document.getElementById('chatWindow');
-                const closeBtn = document.getElementById('closeChat');
-                const messages = document.getElementById('chatMessages');
-                const input = document.getElementById('chatInput');
-                const sendBtn = document.getElementById('chatSendBtn');
-                const quickBtns = document.querySelectorAll('#quickReplies button');
-
-                toggleBtn.addEventListener('click', () => {
-                    chatWindow.classList.toggle('open');
-                    if (chatWindow.classList.contains('open')) input.focus();
-                });
-                closeBtn.addEventListener('click', () => chatWindow.classList.remove('open'));
-
-                quickBtns.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        input.value = btn.dataset.quick;
-                        sendMessage();
-                    });
-                });
-
-                function sendMessage() {
-                    const text = input.value.trim();
-                    if (!text) return;
-                    appendMessage('user', text);
-                    input.value = '';
-                    showTyping();
-                    setTimeout(() => {
-                        removeTyping();
-                        appendMessage('bot', getBotReply(text));
-                    }, 500 + Math.random() * 400);
-                }
-
-                sendBtn.addEventListener('click', sendMessage);
-                input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
-
-                function appendMessage(sender, text) {
-                    const div = document.createElement('div');
-                    div.className = `chat-message ${sender}`;
-                    div.innerHTML = text.replace(/\n/g, '<br>');
-                    messages.appendChild(div);
-                    messages.scrollTop = messages.scrollHeight;
-                }
-
-                function showTyping() {
-                    const div = document.createElement('div');
-                    div.className = 'typing-indicator';
-                    div.id = 'typingIndicator';
-                    div.innerHTML = '<span></span><span></span><span></span>';
-                    messages.appendChild(div);
-                    messages.scrollTop = messages.scrollHeight;
-                }
-
-                function removeTyping() {
-                    const el = document.getElementById('typingIndicator');
-                    if (el) el.remove();
-                }
-
-                function getBotReply(input) {
-                    const lower = input.toLowerCase();
-                    if (/(what.*do|about|platform|compliTrack|what is)/.test(lower)) {
-                        return "CompliTrack SA is a complete employee compliance platform. We help businesses manage staff records, upload and track documents (passports, permits, contracts), monitor expiry dates, and generate reports – all in one secure place. 🚀";
-                    }
-                    if (/(get started|sign up|register|how to start)/.test(lower)) {
-                        return "Getting started is easy! Just click the **Sign Up** button in the top right, create your account, and you'll be able to add employees, upload documents, and track compliance. If you need a demo, contact our sales team via the **Contact** page. 😊";
-                    }
-                    if (/(feature|capabilities|what can you do)/.test(lower)) {
-                        return "Our key features include:\n• 📋 Employee records management\n• 📎 Document upload & storage (passports, permits, contracts)\n• ⏰ Expiry alerts & notifications\n• 📊 Compliance dashboard with charts\n• 💼 Job board for posting openings\n• 📄 Generate PDF reports for inspections\nAnything specific you'd like to know?";
-                    }
-                    if (/(secure|security|data safe|privacy)/.test(lower)) {
-                        return "Security is our top priority. All data is encrypted at rest and in transit. We use Supabase with Row Level Security (RLS) to ensure that only authorised users can access specific data. Regular backups and 99.9% uptime guarantees your information is safe and available. 🔒";
-                    }
-                    if (/(contact|support|help|email)/.test(lower)) {
-                        return "You can reach our support team via the **Contact** page, or email us directly at <span class='email'>support@complitrack.co.za</span>. We typically respond within 24 hours. 📧";
-                    }
-                    return "That's a great question! 🤔 I'm here to help with anything about CompliTrack SA – features, getting started, security, or contact details. Just ask!";
-                }
-
-                // Welcome message if empty
-                setTimeout(() => {
-                    if (messages.children.length === 0) {
-                        appendMessage('bot', "👋 Hi! I'm CompliBot. Ask me about our platform, features, or how to get started.");
-                    }
-                }, 800);
-            }
-
-            // ─── Init ───
-            updateNavbar();
-            loadStats();
-            initChat();
-
-            // ─── Counter animation (static fallback) ───
-            // Already handled by the static counter animation in the original script,
-            // but we've replaced the numbers with live data, so we don't need the animation.
-            // However, we keep the original counter observer for elements that still use data-target.
-            // Since we now set the text directly, we can remove the observer or keep it as backup.
-            // We'll disable the observer to avoid conflict.
-            // The original script had a counter animation; we'll keep it but it will be overridden by our live stats.
-            // So we simply don't call the observer for those elements.
-            // We'll keep the script but it won't affect the numbers we set.
-        })();
     </script>
 </body>
 </html>
