@@ -8,10 +8,95 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="/css/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- html2pdf for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         body { background: #f8f9fa; }
         .status-badge { font-size: 0.8rem; padding: 0.3rem 0.6rem; }
         .id-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+
+        /* --- PDF Report styles (hidden on screen) --- */
+        #report-container {
+            display: none;
+            background: white;
+            padding: 30px 25px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #report-container .report-header {
+            text-align: center;
+            border-bottom: 3px solid #0d6efd;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        #report-container .report-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0d6efd;
+            margin: 0;
+        }
+        #report-container .report-header p {
+            color: #6c757d;
+            margin: 0;
+            font-size: 13px;
+        }
+        #report-container .report-sub {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        #report-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        #report-container table th {
+            background: #0d6efd;
+            color: white;
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: 600;
+        }
+        #report-container table td {
+            padding: 6px 6px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        #report-container table tr:nth-child(even) { background: #f8f9fa; }
+        #report-container .badge-pdf {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 50px;
+            font-size: 10px;
+            font-weight: 600;
+            color: white;
+        }
+        .badge-pdf.bg-success { background: #28a745; }
+        .badge-pdf.bg-danger { background: #dc3545; }
+        .badge-pdf.bg-warning { background: #ffc107; color: #212529; }
+        .badge-pdf.bg-secondary { background: #6c757d; }
+        .badge-pdf.bg-info { background: #17a2b8; }
+        #report-container .report-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+            padding-top: 12px;
+        }
+        #report-container .report-summary {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-top: 15px;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+        #report-container .report-summary span {
+            background: #f1f3f5;
+            padding: 4px 16px;
+            border-radius: 50px;
+        }
     </style>
 </head>
 <body>
@@ -25,11 +110,10 @@
             </button>
             <div class="collapse navbar-collapse" id="nav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.html"></a></li>
-                    <li class="nav-item"><a class="nav-link active" href="dashboard.html">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="employees.html">Employees</a></li>
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="employees.html">Employees</a></li>
                     <li class="nav-item"><a class="nav-link" href="documents.html">Compliance</a></li>
-                    <li class="nav-item"><a class="nav-link" href="reports.html"></a></li>
+                    <li class="nav-item"><a class="nav-link" href="reports.html">Reports</a></li>
                 </ul>
                 <button class="btn btn-outline-danger btn-sm ms-lg-3" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
@@ -38,11 +122,16 @@
 
     <!-- Main Content -->
     <div class="container-fluid mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
             <h3><i class="fas fa-users"></i> Employee Management</h3>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#employeeModal">
-                <i class="fas fa-plus"></i> Add Employee
-            </button>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#employeeModal">
+                    <i class="fas fa-plus"></i> Add Employee
+                </button>
+                <button class="btn btn-success" id="generateReportBtn">
+                    <i class="fas fa-file-pdf"></i> Generate PDF Report
+                </button>
+            </div>
         </div>
         <div class="mb-3">
             <a href="dashboard.html" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
@@ -68,6 +157,23 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Hidden PDF Report Container -->
+    <div id="report-container">
+        <div class="report-header">
+            <h1><i class="fas fa-shield-alt"></i> CompliTrack SA</h1>
+            <p>Employee Compliance Report</p>
+        </div>
+        <div class="report-sub">
+            <span><strong>Generated:</strong> <span id="reportDate"></span></span>
+            <span><strong>Total Employees:</strong> <span id="reportTotal"></span></span>
+        </div>
+        <div id="reportTableWrapper"></div>
+        <div class="report-summary" id="reportSummary"></div>
+        <div class="report-footer">
+            &copy; CompliTrack SA &mdash; Confidential &bull; For internal use only
         </div>
     </div>
 
@@ -151,9 +257,10 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+    </script>
     <script>
-        (async function () {
+        (async function() {
 
             const supabase = window.supabase.createClient(
                 "https://rlfywkvyjoydpbvprtdt.supabase.co",
@@ -225,22 +332,29 @@
                     photoDocs.forEach(d => { photoMap[d.employee_id] = d.file_path; });
 
                     const today = new Date();
-                    today.setHours(0,0,0,0);
+                    today.setHours(0, 0, 0, 0);
                     const thirtyDaysLater = new Date(today);
                     thirtyDaysLater.setDate(today.getDate() + 30);
 
                     employees.forEach(emp => {
                         // Expiry
                         const expiry = expiryMap[emp.id] || null;
-                        let autoStatus = 'missing', autoText = 'Missing', autoBadge = 'bg-secondary';
+                        let autoStatus = 'missing',
+                            autoText = 'Missing',
+                            autoBadge = 'bg-secondary';
                         let expiryDisplay = 'Not uploaded';
                         if (expiry) {
                             expiryDisplay = new Date(expiry).toLocaleDateString();
                             const expDate = new Date(expiry);
-                            expDate.setHours(0,0,0,0);
-                            if (expDate < today) { autoStatus = 'expired'; autoText = 'Expired'; autoBadge = 'bg-danger'; }
-                            else if (expDate <= thirtyDaysLater) { autoStatus = 'expiring'; autoText = 'Expiring Soon'; autoBadge = 'bg-warning text-dark'; }
-                            else { autoStatus = 'valid'; autoText = 'Valid'; autoBadge = 'bg-success'; }
+                            expDate.setHours(0, 0, 0, 0);
+                            if (expDate < today) { autoStatus = 'expired';
+                                autoText = 'Expired';
+                                autoBadge = 'bg-danger'; } else if (expDate <= thirtyDaysLater) { autoStatus =
+                                    'expiring';
+                                autoText = 'Expiring Soon';
+                                autoBadge = 'bg-warning text-dark'; } else { autoStatus = 'valid';
+                                autoText = 'Valid';
+                                autoBadge = 'bg-success'; }
                         }
                         emp._expiry = expiry;
                         emp._expiryDisplay = expiryDisplay;
@@ -254,7 +368,8 @@
 
                         // Photo
                         const photoPath = photoMap[emp.id] || null;
-                        emp._photoUrl = photoPath ? `${supabase.supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${photoPath}` : null;
+                        emp._photoUrl = photoPath ?
+                            `${supabase.supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${photoPath}` : null;
                     });
 
                     allEmployees = employees;
@@ -273,15 +388,17 @@
                     return;
                 }
                 tbody.innerHTML = employees.map(emp => {
-                    const photoHtml = emp._photoUrl 
-                        ? `<img src="${emp._photoUrl}" class="id-thumb" alt="ID photo" />` 
-                        : `<span class="text-muted"><i class="fas fa-user-circle fa-2x"></i></span>`;
+                    const photoHtml = emp._photoUrl ?
+                        `<img src="${emp._photoUrl}" class="id-thumb" alt="ID photo" />` :
+                        `<span class="text-muted"><i class="fas fa-user-circle fa-2x"></i></span>`;
 
                     // Manual badge
                     let manualBadge = 'bg-secondary';
                     let manualText = 'Not set';
-                    if (emp._manualStatus === 'compliant') { manualBadge = 'bg-success'; manualText = 'Compliant'; }
-                    else if (emp._manualStatus === 'noncompliant') { manualBadge = 'bg-danger'; manualText = 'Non‑Compliant'; }
+                    if (emp._manualStatus === 'compliant') { manualBadge = 'bg-success';
+                        manualText = 'Compliant'; } else if (emp._manualStatus === 'noncompliant') { manualBadge =
+                            'bg-danger';
+                        manualText = 'Non‑Compliant'; }
 
                     return `
                         <tr>
@@ -301,8 +418,10 @@
                     `;
                 }).join('');
 
-                document.querySelectorAll('.edit-emp').forEach(btn => btn.addEventListener('click', () => editEmployee(btn.dataset.id)));
-                document.querySelectorAll('.delete-emp').forEach(btn => btn.addEventListener('click', () => deleteEmployee(btn.dataset.id)));
+                document.querySelectorAll('.edit-emp').forEach(btn => btn.addEventListener('click', () => editEmployee(
+                btn.dataset.id)));
+                document.querySelectorAll('.delete-emp').forEach(btn => btn.addEventListener('click', () =>
+                    deleteEmployee(btn.dataset.id)));
             }
 
             // ---------- Edit Employee ----------
@@ -318,7 +437,8 @@
                     document.getElementById('phone').value = emp.phone;
                     document.getElementById('address').value = emp.address || '';
                     document.getElementById('position').value = emp.job_position;
-                    document.getElementById('emp-date').value = emp.employment_date ? emp.employment_date.split('T')[0] : '';
+                    document.getElementById('emp-date').value = emp.employment_date ? emp.employment_date.split('T')[0] :
+                    '';
                     document.getElementById('sa-id-expiry').value = emp._expiry || '';
                     document.getElementById('manual-compliance').value = emp._manualStatus || '';
                     document.getElementById('id-photo').value = '';
@@ -394,7 +514,8 @@
                             .maybeSingle();
                         if (findErr) throw findErr;
                         if (existingDoc) {
-                            await supabase.from('documents').update({ expiry_date: saIdExpiry }).eq('id', existingDoc.id);
+                            await supabase.from('documents').update({ expiry_date: saIdExpiry }).eq('id', existingDoc
+                            .id);
                         } else {
                             await supabase.from('documents').insert([{
                                 employee_id: employeeId,
@@ -458,6 +579,126 @@
                     alert('Save failed: ' + err.message);
                 }
             });
+
+            // ============================================================
+            //  PDF REPORT GENERATION
+            // ============================================================
+            document.getElementById('generateReportBtn').addEventListener('click', function() {
+                generatePDFReport();
+            });
+
+            function generatePDFReport() {
+                if (!allEmployees || allEmployees.length === 0) {
+                    alert('No employee data to generate a report. Please add employees first.');
+                    return;
+                }
+
+                // Build the report HTML
+                const container = document.getElementById('report-container');
+                const wrapper = document.getElementById('reportTableWrapper');
+                const dateSpan = document.getElementById('reportDate');
+                const totalSpan = document.getElementById('reportTotal');
+                const summaryDiv = document.getElementById('reportSummary');
+
+                // Set date and total
+                const now = new Date();
+                dateSpan.textContent = now.toLocaleString('en-ZA', { dateStyle: 'full', timeStyle: 'short' });
+                totalSpan.textContent = allEmployees.length;
+
+                // Build table rows
+                let rows = '';
+                let compliantCount = 0,
+                    nonCompliantCount = 0,
+                    partialCount = 0,
+                    missingCount = 0;
+
+                allEmployees.forEach(emp => {
+                    // Determine overall status for summary
+                    let overallStatus = emp._autoStatus;
+                    if (emp._manualStatus === 'compliant') overallStatus = 'valid';
+                    else if (emp._manualStatus === 'noncompliant') overallStatus = 'expired';
+
+                    if (overallStatus === 'valid') compliantCount++;
+                    else if (overallStatus === 'expired') nonCompliantCount++;
+                    else if (overallStatus === 'expiring') partialCount++;
+                    else missingCount++;
+
+                    const manualLabel = emp._manualStatus === 'compliant' ? 'Compliant' :
+                        emp._manualStatus === 'noncompliant' ? 'Non‑Compliant' : 'Not set';
+
+                    // Choose PDF badge class
+                    let autoBadgePdf = 'bg-secondary';
+                    if (emp._autoStatus === 'valid') autoBadgePdf = 'bg-success';
+                    else if (emp._autoStatus === 'expired') autoBadgePdf = 'bg-danger';
+                    else if (emp._autoStatus === 'expiring') autoBadgePdf = 'bg-warning';
+
+                    let manualBadgePdf = 'bg-secondary';
+                    if (emp._manualStatus === 'compliant') manualBadgePdf = 'bg-success';
+                    else if (emp._manualStatus === 'noncompliant') manualBadgePdf = 'bg-danger';
+
+                    rows += `
+                        <tr>
+                            <td>${emp.full_name}</td>
+                            <td>${emp.id_passport_number}</td>
+                            <td>${emp.nationality}</td>
+                            <td>${emp.job_position || 'N/A'}</td>
+                            <td>${emp._expiryDisplay}</td>
+                            <td><span class="badge-pdf ${autoBadgePdf}">${emp._autoText}</span></td>
+                            <td><span class="badge-pdf ${manualBadgePdf}">${manualLabel}</span></td>
+                        </tr>
+                    `;
+                });
+
+                wrapper.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID/Passport</th>
+                                <th>Nationality</th>
+                                <th>Position</th>
+                                <th>SA ID Expiry</th>
+                                <th>Auto Status</th>
+                                <th>Manual Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                `;
+
+                // Summary
+                summaryDiv.innerHTML = `
+                    <span>✅ Compliant: ${compliantCount}</span>
+                    <span>❌ Non‑Compliant: ${nonCompliantCount}</span>
+                    <span>⚠️ Expiring Soon: ${partialCount}</span>
+                    <span>📄 Missing: ${missingCount}</span>
+                `;
+
+                // Show container temporarily for PDF generation
+                container.style.display = 'block';
+
+                // Generate PDF using html2pdf
+                const opt = {
+                    margin: [10, 10, 10, 10],
+                    filename: `CompliTrack_Employee_Report_${now.toISOString().slice(0,10)}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, letterRendering: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                };
+
+                html2pdf()
+                    .set(opt)
+                    .from(container)
+                    .save()
+                    .then(() => {
+                        container.style.display = 'none';
+                    })
+                    .catch((err) => {
+                        console.error('PDF generation error:', err);
+                        alert('Failed to generate PDF: ' + err.message);
+                        container.style.display = 'none';
+                    });
+            }
 
             // ---------- Init ----------
             if (await checkAdmin()) {
