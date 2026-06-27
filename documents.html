@@ -12,7 +12,8 @@
         body { background: #f8f9fa; }
         .card { border-radius: 12px; }
         .status-badge { font-size: 0.85rem; padding: 0.4rem 0.7rem; }
-        .compliance-select { min-width: 120px; }
+        .compliance-select { min-width: 130px; }
+        .toast-container { position: fixed; top: 80px; right: 20px; z-index: 9999; }
     </style>
 </head>
 <body>
@@ -36,6 +37,16 @@
             </div>
         </div>
     </nav>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container">
+        <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">Compliance status updated!</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <div class="container-fluid mt-4">
@@ -106,6 +117,7 @@
                         <div class="mb-2"><label>Address</label><textarea id="edit-address" class="form-control" rows="2"></textarea></div>
                         <div class="mb-2"><label>Job Position</label><input type="text" id="edit-position" class="form-control" required /></div>
                         <div class="mb-2"><label>Employment Date</label><input type="date" id="edit-emp-date" class="form-control" required /></div>
+                        <hr />
                         <div class="mb-2">
                             <label>Manual Compliance Status</label>
                             <select id="edit-compliance-status" class="form-select">
@@ -134,6 +146,14 @@
             let currentUser = null;
             let allEmployees = [];
 
+            // Toast helper
+            function showToast(message) {
+                const toastEl = document.getElementById('successToast');
+                document.getElementById('toastMessage').textContent = message;
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+
             // -------------------- Auth Check --------------------
             async function checkAdmin() {
                 const { data: { user } } = await supabase.auth.getUser();
@@ -155,7 +175,6 @@
 
             // -------------------- Fetch Employees & Documents --------------------
             async function fetchComplianceData() {
-                // Fetch employees including the new compliance_status column
                 const { data: employees, error: empErr } = await supabase
                     .from("employees")
                     .select("id, full_name, id_passport_number, nationality, phone, address, job_position, employment_date, compliance_status")
@@ -193,7 +212,6 @@
                     emp._expiry = expiry;
                     emp._expiryDisplay = expiryDisplay;
                     emp._autoStatus = autoStatus;
-                    // Manual compliance status from DB (nullable)
                     emp._manualStatus = emp.compliance_status || null;
                 });
 
@@ -218,27 +236,25 @@
                 }
 
                 tbody.innerHTML = filtered.map(emp => {
-                    // Auto status badge
                     let autoBadgeClass = 'bg-secondary';
                     let autoStatusText = 'Missing';
                     if (emp._autoStatus === 'valid') { autoBadgeClass = 'bg-success'; autoStatusText = 'Valid'; }
                     else if (emp._autoStatus === 'expiring') { autoBadgeClass = 'bg-warning text-dark'; autoStatusText = 'Expiring Soon'; }
                     else if (emp._autoStatus === 'expired') { autoBadgeClass = 'bg-danger'; autoStatusText = 'Expired'; }
 
-                    // Manual status badge
                     let manualBadgeClass = 'bg-secondary';
                     let manualStatusText = 'Not set';
                     if (emp._manualStatus === 'compliant') { manualBadgeClass = 'bg-success'; manualStatusText = 'Compliant'; }
                     else if (emp._manualStatus === 'noncompliant') { manualBadgeClass = 'bg-danger'; manualStatusText = 'Non‑Compliant'; }
 
                     return `
-                        <tr>
+                        <tr data-id="${emp.id}">
                             <td><strong>${emp.full_name}</strong></td>
                             <td>${emp.id_passport_number}</td>
                             <td>${emp.nationality}</td>
                             <td>${emp._expiryDisplay}</td>
                             <td><span class="badge ${autoBadgeClass} status-badge">${autoStatusText}</span></td>
-                            <td><span class="badge ${manualBadgeClass} status-badge">${manualStatusText}</span></td>
+                            <td><span class="badge ${manualBadgeClass} status-badge manual-badge" data-id="${emp.id}">${manualStatusText}</span></td>
                             <td>
                                 <div class="d-flex gap-1">
                                     <select class="form-select form-select-sm compliance-select" data-id="${emp.id}">
@@ -257,17 +273,39 @@
                 document.querySelectorAll('.compliance-select').forEach(select => {
                     select.addEventListener('change', async function() {
                         const empId = this.dataset.id;
-                        const value = this.value; // '' or 'compliant' or 'noncompliant'
+                        const newStatus = this.value; // '' or 'compliant' or 'noncompliant'
+                        // Update the employee in the database
                         try {
                             const { error } = await supabase
                                 .from('employees')
-                                .update({ compliance_status: value || null })
+                                .update({ compliance_status: newStatus || null })
                                 .eq('id', empId);
                             if (error) throw error;
-                            // Refresh table
-                            await loadCompliance();
+
+                            // Update local data
+                            const emp = allEmployees.find(e => e.id == empId);
+                            if (emp) {
+                                emp._manualStatus = newStatus || null;
+                                emp.compliance_status = newStatus || null;
+                            }
+
+                            // Update the manual badge in the row
+                            const row = document.querySelector(`tr[data-id="${empId}"]`);
+                            if (row) {
+                                const badge = row.querySelector('.manual-badge');
+                                let badgeClass = 'bg-secondary';
+                                let statusText = 'Not set';
+                                if (newStatus === 'compliant') { badgeClass = 'bg-success'; statusText = 'Compliant'; }
+                                else if (newStatus === 'noncompliant') { badgeClass = 'bg-danger'; statusText = 'Non‑Compliant'; }
+                                badge.className = `badge ${badgeClass} status-badge manual-badge`;
+                                badge.textContent = statusText;
+                            }
+
+                            showToast('Compliance status updated successfully!');
                         } catch (err) {
                             alert('Failed to update compliance: ' + err.message);
+                            // Revert select to previous value
+                            this.value = allEmployees.find(e => e.id == empId)?._manualStatus || '';
                         }
                     });
                 });
@@ -301,6 +339,7 @@
             document.getElementById('edit-employee-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const id = document.getElementById('edit-emp-id').value;
+                const newManualStatus = document.getElementById('edit-compliance-status').value;
                 const payload = {
                     full_name: document.getElementById('edit-full-name').value.trim(),
                     id_passport_number: document.getElementById('edit-id-number').value.trim(),
@@ -309,13 +348,23 @@
                     address: document.getElementById('edit-address').value.trim(),
                     job_position: document.getElementById('edit-position').value.trim(),
                     employment_date: document.getElementById('edit-emp-date').value,
-                    compliance_status: document.getElementById('edit-compliance-status').value || null
+                    compliance_status: newManualStatus || null
                 };
                 try {
                     const { error } = await supabase.from('employees').update(payload).eq('id', id);
                     if (error) throw error;
+
+                    // Update local data
+                    const emp = allEmployees.find(e => e.id == id);
+                    if (emp) {
+                        Object.assign(emp, payload);
+                        emp._manualStatus = newManualStatus || null;
+                    }
+
                     bootstrap.Modal.getInstance(document.getElementById('editEmployeeModal')).hide();
-                    await loadCompliance();
+                    // Refresh the table view without fetching again
+                    renderTable(allEmployees, document.getElementById('filter-status').value);
+                    showToast('Employee updated successfully!');
                 } catch (err) {
                     alert('Update failed: ' + err.message);
                 }
@@ -364,12 +413,11 @@
         })();
     </script>
 
-    <!-- Add this note to remind about the DB column -->
+    <!-- Database column reminder -->
     <div style="display:none;">
         <!-- 
-            IMPORTANT: You need to add a column 'compliance_status' to the 'employees' table.
-            Run this SQL in Supabase SQL Editor:
-            ALTER TABLE employees ADD COLUMN compliance_status TEXT;
+            IMPORTANT: Add 'compliance_status' TEXT column to 'employees' table.
+            Run: ALTER TABLE employees ADD COLUMN compliance_status TEXT;
         -->
     </div>
 </body>
