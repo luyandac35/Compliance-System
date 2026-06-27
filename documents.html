@@ -12,6 +12,7 @@
         body { background: #f8f9fa; }
         .card { border-radius: 12px; }
         .status-badge { font-size: 0.85rem; padding: 0.4rem 0.7rem; }
+        .compliance-select { min-width: 120px; }
     </style>
 </head>
 <body>
@@ -25,11 +26,11 @@
             </button>
             <div class="collapse navbar-collapse" id="nav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.html"></a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="employees.html">Employees</a></li>
                     <li class="nav-item"><a class="nav-link active" href="documents.html">Compliance</a></li>
-                    <li class="nav-item"><a class="nav-link" href="reports.html"></a></li>
+                    <li class="nav-item"><a class="nav-link" href="reports.html">Reports</a></li>
                 </ul>
                 <button class="btn btn-outline-danger btn-sm ms-lg-3" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
@@ -56,6 +57,8 @@
                                 <option value="expiring">Expiring Soon (≤30 days)</option>
                                 <option value="expired">Expired ID</option>
                                 <option value="missing">Missing ID</option>
+                                <option value="compliant">Manually Compliant</option>
+                                <option value="noncompliant">Manually Non‑Compliant</option>
                             </select>
                             <button class="btn btn-success btn-sm ms-2" id="generate-compliance-report"><i class="fas fa-file-pdf"></i> Generate Report</button>
                         </div>
@@ -69,12 +72,13 @@
                                         <th>ID/Passport</th>
                                         <th>Nationality</th>
                                         <th>SA ID Expiry</th>
-                                        <th>Status</th>
+                                        <th>Auto Status</th>
+                                        <th>Manual Compliance</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="compliance-tbody">
-                                    <tr><td colspan="6" class="text-center text-muted">Loading...</td></tr>
+                                    <tr><td colspan="7" class="text-center text-muted">Loading...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -102,6 +106,15 @@
                         <div class="mb-2"><label>Address</label><textarea id="edit-address" class="form-control" rows="2"></textarea></div>
                         <div class="mb-2"><label>Job Position</label><input type="text" id="edit-position" class="form-control" required /></div>
                         <div class="mb-2"><label>Employment Date</label><input type="date" id="edit-emp-date" class="form-control" required /></div>
+                        <div class="mb-2">
+                            <label>Manual Compliance Status</label>
+                            <select id="edit-compliance-status" class="form-select">
+                                <option value="">Not set (auto)</option>
+                                <option value="compliant">Compliant</option>
+                                <option value="noncompliant">Non‑Compliant</option>
+                            </select>
+                            <small class="text-muted">Overrides automatic SA ID expiry status.</small>
+                        </div>
                         <button type="submit" class="btn btn-primary w-100">Update Employee</button>
                     </form>
                 </div>
@@ -142,13 +155,13 @@
 
             // -------------------- Fetch Employees & Documents --------------------
             async function fetchComplianceData() {
+                // Fetch employees including the new compliance_status column
                 const { data: employees, error: empErr } = await supabase
                     .from("employees")
-                    .select("id, full_name, id_passport_number, nationality, phone, address, job_position, employment_date")
+                    .select("id, full_name, id_passport_number, nationality, phone, address, job_position, employment_date, compliance_status")
                     .order("full_name");
                 if (empErr) throw empErr;
 
-                // For each employee, get SA_ID document expiry
                 const employeeIds = employees.map(e => e.id);
                 const { data: docs, error: docErr } = await supabase
                     .from("documents")
@@ -157,11 +170,9 @@
                     .in("employee_id", employeeIds);
                 if (docErr) throw docErr;
 
-                // Map employee_id -> expiry_date
                 const expiryMap = {};
                 docs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
 
-                // Compute status
                 const today = new Date();
                 today.setHours(0,0,0,0);
                 const thirtyDaysLater = new Date(today);
@@ -169,17 +180,21 @@
 
                 employees.forEach(emp => {
                     const expiry = expiryMap[emp.id] || null;
-                    let status = 'missing';
-                    let expiryDate = expiry;
+                    let autoStatus = 'missing';
+                    let expiryDisplay = 'Not uploaded';
                     if (expiry) {
+                        expiryDisplay = new Date(expiry).toLocaleDateString();
                         const expDate = new Date(expiry);
                         expDate.setHours(0,0,0,0);
-                        if (expDate < today) status = 'expired';
-                        else if (expDate <= thirtyDaysLater) status = 'expiring';
-                        else status = 'valid';
+                        if (expDate < today) autoStatus = 'expired';
+                        else if (expDate <= thirtyDaysLater) autoStatus = 'expiring';
+                        else autoStatus = 'valid';
                     }
-                    emp._expiry = expiryDate;
-                    emp._status = status;
+                    emp._expiry = expiry;
+                    emp._expiryDisplay = expiryDisplay;
+                    emp._autoStatus = autoStatus;
+                    // Manual compliance status from DB (nullable)
+                    emp._manualStatus = emp.compliance_status || null;
                 });
 
                 allEmployees = employees;
@@ -190,40 +205,73 @@
             function renderTable(employees, filter = 'all') {
                 const tbody = document.getElementById('compliance-tbody');
                 let filtered = employees;
-                if (filter === 'valid') filtered = employees.filter(e => e._status === 'valid');
-                else if (filter === 'expiring') filtered = employees.filter(e => e._status === 'expiring');
-                else if (filter === 'expired') filtered = employees.filter(e => e._status === 'expired');
-                else if (filter === 'missing') filtered = employees.filter(e => e._status === 'missing');
+                if (filter === 'valid') filtered = employees.filter(e => e._autoStatus === 'valid');
+                else if (filter === 'expiring') filtered = employees.filter(e => e._autoStatus === 'expiring');
+                else if (filter === 'expired') filtered = employees.filter(e => e._autoStatus === 'expired');
+                else if (filter === 'missing') filtered = employees.filter(e => e._autoStatus === 'missing');
+                else if (filter === 'compliant') filtered = employees.filter(e => e._manualStatus === 'compliant');
+                else if (filter === 'noncompliant') filtered = employees.filter(e => e._manualStatus === 'noncompliant');
 
                 if (filtered.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No employees match this filter.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No employees match this filter.</td></tr>`;
                     return;
                 }
 
                 tbody.innerHTML = filtered.map(emp => {
-                    let badgeClass = 'bg-secondary';
-                    let statusText = 'Missing';
-                    if (emp._status === 'valid') { badgeClass = 'bg-success'; statusText = 'Valid'; }
-                    else if (emp._status === 'expiring') { badgeClass = 'bg-warning text-dark'; statusText = 'Expiring Soon'; }
-                    else if (emp._status === 'expired') { badgeClass = 'bg-danger'; statusText = 'Expired'; }
+                    // Auto status badge
+                    let autoBadgeClass = 'bg-secondary';
+                    let autoStatusText = 'Missing';
+                    if (emp._autoStatus === 'valid') { autoBadgeClass = 'bg-success'; autoStatusText = 'Valid'; }
+                    else if (emp._autoStatus === 'expiring') { autoBadgeClass = 'bg-warning text-dark'; autoStatusText = 'Expiring Soon'; }
+                    else if (emp._autoStatus === 'expired') { autoBadgeClass = 'bg-danger'; autoStatusText = 'Expired'; }
 
-                    const expiryDisplay = emp._expiry ? new Date(emp._expiry).toLocaleDateString() : 'Not uploaded';
+                    // Manual status badge
+                    let manualBadgeClass = 'bg-secondary';
+                    let manualStatusText = 'Not set';
+                    if (emp._manualStatus === 'compliant') { manualBadgeClass = 'bg-success'; manualStatusText = 'Compliant'; }
+                    else if (emp._manualStatus === 'noncompliant') { manualBadgeClass = 'bg-danger'; manualStatusText = 'Non‑Compliant'; }
 
                     return `
                         <tr>
                             <td><strong>${emp.full_name}</strong></td>
                             <td>${emp.id_passport_number}</td>
                             <td>${emp.nationality}</td>
-                            <td>${expiryDisplay}</td>
-                            <td><span class="badge ${badgeClass} status-badge">${statusText}</span></td>
+                            <td>${emp._expiryDisplay}</td>
+                            <td><span class="badge ${autoBadgeClass} status-badge">${autoStatusText}</span></td>
+                            <td><span class="badge ${manualBadgeClass} status-badge">${manualStatusText}</span></td>
                             <td>
-                                <button class="btn btn-sm btn-warning edit-emp-btn" data-id="${emp.id}"><i class="fas fa-edit"></i> Edit</button>
+                                <div class="d-flex gap-1">
+                                    <select class="form-select form-select-sm compliance-select" data-id="${emp.id}">
+                                        <option value="">Auto</option>
+                                        <option value="compliant" ${emp._manualStatus === 'compliant' ? 'selected' : ''}>Compliant</option>
+                                        <option value="noncompliant" ${emp._manualStatus === 'noncompliant' ? 'selected' : ''}>Non‑Compliant</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-warning edit-emp-btn" data-id="${emp.id}"><i class="fas fa-edit"></i></button>
+                                </div>
                             </td>
                         </tr>
                     `;
                 }).join('');
 
-                // Attach edit events
+                // Attach events for compliance dropdown change
+                document.querySelectorAll('.compliance-select').forEach(select => {
+                    select.addEventListener('change', async function() {
+                        const empId = this.dataset.id;
+                        const value = this.value; // '' or 'compliant' or 'noncompliant'
+                        try {
+                            const { error } = await supabase
+                                .from('employees')
+                                .update({ compliance_status: value || null })
+                                .eq('id', empId);
+                            if (error) throw error;
+                            // Refresh table
+                            await loadCompliance();
+                        } catch (err) {
+                            alert('Failed to update compliance: ' + err.message);
+                        }
+                    });
+                });
+
                 document.querySelectorAll('.edit-emp-btn').forEach(btn => {
                     btn.addEventListener('click', () => openEditModal(btn.dataset.id));
                 });
@@ -246,6 +294,7 @@
                 document.getElementById('edit-address').value = emp.address || '';
                 document.getElementById('edit-position').value = emp.job_position || '';
                 document.getElementById('edit-emp-date').value = emp.employment_date ? emp.employment_date.split('T')[0] : '';
+                document.getElementById('edit-compliance-status').value = emp._manualStatus || '';
                 new bootstrap.Modal(document.getElementById('editEmployeeModal')).show();
             }
 
@@ -259,37 +308,38 @@
                     phone: document.getElementById('edit-phone').value.trim(),
                     address: document.getElementById('edit-address').value.trim(),
                     job_position: document.getElementById('edit-position').value.trim(),
-                    employment_date: document.getElementById('edit-emp-date').value
+                    employment_date: document.getElementById('edit-emp-date').value,
+                    compliance_status: document.getElementById('edit-compliance-status').value || null
                 };
                 try {
                     const { error } = await supabase.from('employees').update(payload).eq('id', id);
                     if (error) throw error;
                     bootstrap.Modal.getInstance(document.getElementById('editEmployeeModal')).hide();
-                    // Refresh data
                     await loadCompliance();
                 } catch (err) {
                     alert('Update failed: ' + err.message);
                 }
             });
 
-            // -------------------- Generate Report (simple alert with table data) --------------------
+            // -------------------- Generate Report --------------------
             document.getElementById('generate-compliance-report').addEventListener('click', function() {
-                // Generate a simple printable view (just show as alert or open new window)
                 const filter = document.getElementById('filter-status').value;
                 let filtered = allEmployees;
-                if (filter === 'valid') filtered = allEmployees.filter(e => e._status === 'valid');
-                else if (filter === 'expiring') filtered = allEmployees.filter(e => e._status === 'expiring');
-                else if (filter === 'expired') filtered = allEmployees.filter(e => e._status === 'expired');
-                else if (filter === 'missing') filtered = allEmployees.filter(e => e._status === 'missing');
+                if (filter === 'valid') filtered = allEmployees.filter(e => e._autoStatus === 'valid');
+                else if (filter === 'expiring') filtered = allEmployees.filter(e => e._autoStatus === 'expiring');
+                else if (filter === 'expired') filtered = allEmployees.filter(e => e._autoStatus === 'expired');
+                else if (filter === 'missing') filtered = allEmployees.filter(e => e._autoStatus === 'missing');
+                else if (filter === 'compliant') filtered = allEmployees.filter(e => e._manualStatus === 'compliant');
+                else if (filter === 'noncompliant') filtered = allEmployees.filter(e => e._manualStatus === 'noncompliant');
 
                 let reportText = 'Compliance Report - ' + new Date().toLocaleString() + '\n\n';
-                reportText += 'Employee | ID | Nationality | SA ID Expiry | Status\n';
-                reportText += '----------------------------------------------------------\n';
+                reportText += 'Employee | ID | Nationality | SA ID Expiry | Auto Status | Manual Status\n';
+                reportText += '--------------------------------------------------------------------------------\n';
                 filtered.forEach(emp => {
                     const expiryDisplay = emp._expiry ? new Date(emp._expiry).toLocaleDateString() : 'Not uploaded';
-                    reportText += `${emp.full_name} | ${emp.id_passport_number} | ${emp.nationality} | ${expiryDisplay} | ${emp._status}\n`;
+                    const manual = emp._manualStatus || 'Not set';
+                    reportText += `${emp.full_name} | ${emp.id_passport_number} | ${emp.nationality} | ${expiryDisplay} | ${emp._autoStatus} | ${manual}\n`;
                 });
-                // Open in new window for printing
                 const win = window.open('', '_blank');
                 win.document.write('<pre>' + reportText + '</pre>');
                 win.document.write('<button onclick="window.print()">Print</button>');
@@ -303,7 +353,7 @@
                     renderTable(allEmployees, document.getElementById('filter-status').value);
                 } catch (err) {
                     console.error(err);
-                    document.getElementById('compliance-tbody').innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error loading data: ${err.message}</td></tr>`;
+                    document.getElementById('compliance-tbody').innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error loading data: ${err.message}</td></tr>`;
                 }
             }
 
@@ -313,5 +363,14 @@
             }
         })();
     </script>
+
+    <!-- Add this note to remind about the DB column -->
+    <div style="display:none;">
+        <!-- 
+            IMPORTANT: You need to add a column 'compliance_status' to the 'employees' table.
+            Run this SQL in Supabase SQL Editor:
+            ALTER TABLE employees ADD COLUMN compliance_status TEXT;
+        -->
+    </div>
 </body>
 </html>
