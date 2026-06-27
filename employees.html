@@ -152,7 +152,8 @@
 
             console.log('✅ Supabase client ready');
 
-            const STORAGE_BUCKET = 'documents'; // public bucket for ID photos
+            // Use the existing 'documents' bucket (must exist and be public)
+            const STORAGE_BUCKET = 'documents'; // Changed from 'id_photos'
 
             let currentUser = null;
             let allEmployees = [];
@@ -297,7 +298,6 @@
                     document.getElementById('position').value = emp.job_position;
                     document.getElementById('emp-date').value = emp.employment_date ? emp.employment_date.split('T')[0] : '';
                     document.getElementById('sa-id-expiry').value = emp._expiry || '';
-                    // Clear file input (we don't prefill it)
                     document.getElementById('id-photo').value = '';
 
                     new bootstrap.Modal(document.getElementById('employeeModal')).show();
@@ -311,6 +311,7 @@
             async function deleteEmployee(id) {
                 if (!confirm('Delete this employee? All associated documents will also be removed.')) return;
                 try {
+                    // Delete employee record (cascade will remove documents if foreign key is set)
                     const { error } = await supabase
                         .from('employees')
                         .delete()
@@ -345,7 +346,6 @@
 
                     let employeeId;
                     if (id) {
-                        // Update employee
                         const { error } = await supabase
                             .from('employees')
                             .update(payload)
@@ -353,7 +353,6 @@
                         if (error) throw error;
                         employeeId = id;
                     } else {
-                        // Insert new employee
                         const { data, error } = await supabase
                             .from('employees')
                             .insert([payload])
@@ -385,11 +384,11 @@
                                 is_incomplete: false
                             }]);
                         }
-                    } // else we leave as is (maybe clear? not required)
+                    }
 
                     // --- Handle ID photo upload ---
                     if (photoFile) {
-                        // Check if an ID_PHOTO document already exists for this employee
+                        // Check if an ID_PHOTO document already exists
                         const { data: existingPhoto, error: findPhotoErr } = await supabase
                             .from('documents')
                             .select('id, file_path')
@@ -403,9 +402,9 @@
                             await supabase.storage.from(STORAGE_BUCKET).remove([existingPhoto.file_path]);
                         }
 
-                        // Upload new file
+                        // Upload new file inside the 'documents' bucket, with subfolder 'id_photos/'
                         const ext = photoFile.name.split('.').pop() || 'jpg';
-                        const filePath = `${employeeId}/id_photo_${Date.now()}.${ext}`;
+                        const filePath = `id_photos/${employeeId}/photo_${Date.now()}.${ext}`;
                         const { error: uploadErr } = await supabase.storage
                             .from(STORAGE_BUCKET)
                             .upload(filePath, photoFile);
