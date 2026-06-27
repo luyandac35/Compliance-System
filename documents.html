@@ -3,24 +3,15 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Documents - CompliTrack SA</title>
+    <title>Compliance - CompliTrack SA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="/css/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            background: #f8f9fa;
-        }
-
-        .card {
-            border-radius: 12px;
-        }
-
-        .file-name {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
+        body { background: #f8f9fa; }
+        .card { border-radius: 12px; }
+        .status-badge { font-size: 0.85rem; padding: 0.4rem 0.7rem; }
     </style>
 </head>
 <body>
@@ -37,7 +28,7 @@
                     <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="employees.html">Employees</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="documents.html">Documents</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="documents.html">Compliance</a></li>
                     <li class="nav-item"><a class="nav-link" href="reports.html">Reports</a></li>
                 </ul>
                 <button class="btn btn-outline-danger btn-sm ms-lg-3" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -47,67 +38,72 @@
 
     <!-- Main Content -->
     <div class="container-fluid mt-4">
-        <h3><i class="fas fa-file-upload text-primary me-2"></i>Document Management</h3>
+        <h3><i class="fas fa-clipboard-check text-primary me-2"></i>Employee Compliance Overview</h3>
         <div class="mb-3">
             <a href="/dashboard.html" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
             <a href="/employees.html" class="btn btn-info btn-sm ms-2"><i class="fas fa-users"></i> Manage Employees</a>
         </div>
 
         <div class="row">
-            <!-- Upload form -->
-            <div class="col-md-4 mb-4">
+            <div class="col-12">
                 <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-cloud-upload-alt me-2"></i>Upload Document
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-id-card me-2"></i>SA ID Compliance Status</span>
+                        <div>
+                            <select id="filter-status" class="form-select form-select-sm bg-light" style="width:auto;display:inline-block;">
+                                <option value="all">All Employees</option>
+                                <option value="valid">Valid ID</option>
+                                <option value="expiring">Expiring Soon (≤30 days)</option>
+                                <option value="expired">Expired ID</option>
+                                <option value="missing">Missing ID</option>
+                            </select>
+                            <button class="btn btn-success btn-sm ms-2" id="generate-compliance-report"><i class="fas fa-file-pdf"></i> Generate Report</button>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <form id="upload-doc-form" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Select Employee</label>
-                                <select id="doc-employee-select" class="form-select" required>
-                                    <option value="">-- Choose an employee --</option>
-                                </select>
-                            </div>
-                            <input type="hidden" id="doc-employee-id" />
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Document Type</label>
-                                <select name="doc_type" class="form-select" required>
-                                    <option value="SA_ID">South African ID</option>
-                                    <option value="PASSPORT">Passport</option>
-                                    <option value="WORK_PERMIT">Work Permit</option>
-                                    <option value="VISA">Visa</option>
-                                    <option value="CONTRACT">Contract</option>
-                                    <option value="QUALIFICATION">Qualification</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Expiry Date (for permits/visas)</label>
-                                <input type="date" name="expiry_date" class="form-control" />
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">File (image or PDF, max 10MB)</label>
-                                <input type="file" name="document" class="form-control" required accept="image/*,application/pdf" />
-                            </div>
-
-                            <button type="submit" class="btn btn-success w-100"><i class="fas fa-upload me-2"></i>Upload</button>
-                        </form>
-                        <div id="upload-feedback" class="mt-3"></div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>ID/Passport</th>
+                                        <th>Nationality</th>
+                                        <th>SA ID Expiry</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="compliance-tbody">
+                                    <tr><td colspan="6" class="text-center text-muted">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Document list -->
-            <div class="col-md-8">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-secondary text-white">
-                        <i class="fas fa-list me-2"></i>Uploaded Documents
-                    </div>
-                    <div class="card-body" id="documents-list">
-                        <p class="text-muted text-center">Select an employee to view their documents.</p>
-                    </div>
+    <!-- Edit Employee Modal -->
+    <div class="modal fade" id="editEmployeeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-employee-form">
+                        <input type="hidden" id="edit-emp-id" />
+                        <div class="mb-2"><label>Full Name</label><input type="text" id="edit-full-name" class="form-control" required /></div>
+                        <div class="mb-2"><label>ID/Passport Number</label><input type="text" id="edit-id-number" class="form-control" required /></div>
+                        <div class="mb-2"><label>Nationality</label><input type="text" id="edit-nationality" class="form-control" required /></div>
+                        <div class="mb-2"><label>Phone</label><input type="text" id="edit-phone" class="form-control" required /></div>
+                        <div class="mb-2"><label>Address</label><textarea id="edit-address" class="form-control" rows="2"></textarea></div>
+                        <div class="mb-2"><label>Job Position</label><input type="text" id="edit-position" class="form-control" required /></div>
+                        <div class="mb-2"><label>Employment Date</label><input type="date" id="edit-emp-date" class="form-control" required /></div>
+                        <button type="submit" class="btn btn-primary w-100">Update Employee</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -116,255 +112,205 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         (async function () {
-
-            // ================= SUPABASE =================
+            // -------------------- Supabase --------------------
             const supabase = window.supabase.createClient(
                 "https://rlfywkvyjoydpbvprtdt.supabase.co",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZnl3a3Z5am95ZHBidnBydGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzQ2MTEsImV4cCI6MjA5NzkxMDYxMX0.oF3BnxQD0AE_47ypbIA39iV0FGICbXZJPwOgiZTcjMk"
             );
 
-            const STORAGE_BUCKET = "documents";
-
             let currentUser = null;
+            let allEmployees = [];
 
-            // ================= AUTH CHECK =================
+            // -------------------- Auth Check --------------------
             async function checkAdmin() {
                 const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    window.location.href = "login.html";
-                    return true;
-                }
-
+                if (!user) { window.location.href = "login.html"; return false; }
                 currentUser = user;
-
-                const { data: profile } = await supabase
-                    .from("profiles")
-                    .select("role")
-                    .eq("id", user.id)
-                    .single();
-
+                const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
                 if (!profile || profile.role !== "admin") {
                     alert("Access denied. Admins only.");
                     window.location.href = "index.html";
                     return false;
                 }
-
                 return true;
             }
 
-            // ================= LOGOUT =================
             document.getElementById("logoutBtn").addEventListener("click", async () => {
                 await supabase.auth.signOut();
                 window.location.href = "index.html";
             });
 
-            // ================= LOAD EMPLOYEES =================
-            async function loadEmployees() {
-                const { data, error } = await supabase
+            // -------------------- Fetch Employees & Documents --------------------
+            async function fetchComplianceData() {
+                const { data: employees, error: empErr } = await supabase
                     .from("employees")
-                    .select("id, full_name")
+                    .select("id, full_name, id_passport_number, nationality, phone, address, job_position, employment_date")
                     .order("full_name");
+                if (empErr) throw empErr;
 
-                if (error) {
-                    console.error(error);
-                    alert("Failed to load employees");
-                    return;
-                }
-
-                const select = document.getElementById("doc-employee-select");
-                select.innerHTML = `<option value="">-- Choose employee --</option>`;
-
-                data.forEach(emp => {
-                    const opt = document.createElement("option");
-                    opt.value = emp.id; // BIGINT ✔
-                    opt.textContent = emp.full_name;
-                    select.appendChild(opt);
-                });
-
-                select.addEventListener("change", () => {
-                    const id = select.value;
-                    document.getElementById("doc-employee-id").value = id;
-
-                    if (id) loadDocuments(id);
-                    else resetDocuments();
-                });
-            }
-
-            function resetDocuments() {
-                document.getElementById("documents-list").innerHTML =
-                    `<p class="text-muted text-center">Select an employee to view documents.</p>`;
-            }
-
-            // ================= LOAD DOCUMENTS =================
-            async function loadDocuments(employeeId) {
-
-                const container = document.getElementById("documents-list");
-                container.innerHTML = `<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>`;
-
-                const { data, error } = await supabase
+                // For each employee, get SA_ID document expiry
+                const employeeIds = employees.map(e => e.id);
+                const { data: docs, error: docErr } = await supabase
                     .from("documents")
-                    .select("*")
-                    .eq("employee_id", employeeId)
-                    .order("upload_date", { ascending: false });
+                    .select("employee_id, expiry_date")
+                    .eq("doc_type", "SA_ID")
+                    .in("employee_id", employeeIds);
+                if (docErr) throw docErr;
 
-                if (error) {
-                    console.error(error);
-                    container.innerHTML = `<div class="alert alert-danger">Failed to load documents</div>`;
-                    return;
-                }
+                // Map employee_id -> expiry_date
+                const expiryMap = {};
+                docs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
 
-                if (!data || data.length === 0) {
-                    container.innerHTML = `<p class="text-muted text-center">No documents found.</p>`;
-                    return;
-                }
+                // Compute status
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const thirtyDaysLater = new Date(today);
+                thirtyDaysLater.setDate(today.getDate() + 30);
 
-                const baseUrl = `${supabase.supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/`;
-
-                container.innerHTML = data.map(doc => `
-                <div class="border rounded p-3 mb-2 d-flex justify-content-between">
-                    <div>
-                        <strong>${doc.doc_type}</strong><br/>
-
-                        <small class="text-muted">
-                            Uploaded: ${new Date(doc.upload_date).toLocaleString()}
-                        </small><br/>
-
-                        ${doc.expiry_date ? `<small>Expires: ${doc.expiry_date}</small><br/>` : ""}
-
-                        ${doc.is_blurry ? `<span class="badge bg-warning">Blurry</span>` : ""}
-                        ${doc.is_incomplete ? `<span class="badge bg-danger">Incomplete</span>` : ""}
-
-                        <br/>
-
-                        <a href="${baseUrl}${doc.file_path}" target="_blank"
-                           class="btn btn-sm btn-outline-primary mt-2">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                    </div>
-
-                    <button class="btn btn-sm btn-outline-danger delete-doc"
-                            data-id="${doc.id}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `).join("");
-
-                document.querySelectorAll(".delete-doc").forEach(btn => {
-                    btn.addEventListener("click", () =>
-                        deleteDocument(btn.dataset.id, employeeId)
-                    );
-                });
-            }
-
-            // ================= DELETE DOCUMENT =================
-            async function deleteDocument(docId, employeeId) {
-
-                if (!confirm("Delete this document?")) return;
-
-                const { data } = await supabase
-                    .from("documents")
-                    .select("file_path")
-                    .eq("id", docId)
-                    .single();
-
-                if (data?.file_path) {
-                    await supabase.storage
-                        .from(STORAGE_BUCKET)
-                        .remove([data.file_path]);
-                }
-
-                const { error } = await supabase
-                    .from("documents")
-                    .delete()
-                    .eq("id", docId);
-
-                if (error) {
-                    alert("Delete failed: " + error.message);
-                    return;
-                }
-
-                loadDocuments(employeeId);
-            }
-
-            // ================= UPLOAD DOCUMENT =================
-            document.getElementById("upload-doc-form").addEventListener("submit", async (e) => {
-                e.preventDefault();
-
-                const btn = e.target.querySelector("button");
-                btn.disabled = true;
-
-                const formData = new FormData(e.target);
-
-                const employeeId = document.getElementById("doc-employee-id").value;
-                const file = formData.get("document");
-                const docType = formData.get("doc_type");
-                const expiryDate = formData.get("expiry_date") || null;
-
-                const feedback = document.getElementById("upload-feedback");
-
-                if (!employeeId || !file) {
-                    feedback.innerHTML = `<div class="alert alert-warning">Select employee and file</div>`;
-                    btn.disabled = false;
-                    return;
-                }
-
-                // file validation
-                if (file.size > 10 * 1024 * 1024) {
-                    feedback.innerHTML = `<div class="alert alert-danger">File too large (max 10MB)</div>`;
-                    btn.disabled = false;
-                    return;
-                }
-
-                const ext = file.name.split(".").pop() || "file";
-                const filePath = `${employeeId}/${docType}_${Date.now()}.${ext}`;
-
-                feedback.innerHTML = `<div class="alert alert-info">Uploading...</div>`;
-
-                try {
-
-                    // 1. upload file
-                    const { error: uploadError } = await supabase.storage
-                        .from(STORAGE_BUCKET)
-                        .upload(filePath, file);
-
-                    if (uploadError) throw uploadError;
-
-                    // 2. insert DB record (MATCH YOUR SCHEMA ✔)
-                    const { error: dbError } = await supabase
-                        .from("documents")
-                        .insert([{
-                            employee_id: Number(employeeId),
-                            doc_type: docType,
-                            file_path: filePath,
-                            expiry_date: expiryDate,
-                            uploaded_by: currentUser.id,
-                            upload_date: new Date().toISOString(),
-                            is_blurry: false,
-                            is_incomplete: false
-                        }]);
-
-                    if (dbError) {
-                        await supabase.storage.from(STORAGE_BUCKET).remove([filePath]);
-                        throw dbError;
+                employees.forEach(emp => {
+                    const expiry = expiryMap[emp.id] || null;
+                    let status = 'missing';
+                    let expiryDate = expiry;
+                    if (expiry) {
+                        const expDate = new Date(expiry);
+                        expDate.setHours(0,0,0,0);
+                        if (expDate < today) status = 'expired';
+                        else if (expDate <= thirtyDaysLater) status = 'expiring';
+                        else status = 'valid';
                     }
+                    emp._expiry = expiryDate;
+                    emp._status = status;
+                });
 
-                    feedback.innerHTML = `<div class="alert alert-success">Upload successful 🎉</div>`;
-                    e.target.reset();
-                    loadDocuments(employeeId);
+                allEmployees = employees;
+                return employees;
+            }
 
-                } catch (err) {
-                    console.error(err);
-                    feedback.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+            // -------------------- Render Table --------------------
+            function renderTable(employees, filter = 'all') {
+                const tbody = document.getElementById('compliance-tbody');
+                let filtered = employees;
+                if (filter === 'valid') filtered = employees.filter(e => e._status === 'valid');
+                else if (filter === 'expiring') filtered = employees.filter(e => e._status === 'expiring');
+                else if (filter === 'expired') filtered = employees.filter(e => e._status === 'expired');
+                else if (filter === 'missing') filtered = employees.filter(e => e._status === 'missing');
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No employees match this filter.</td></tr>`;
+                    return;
                 }
 
-                btn.disabled = false;
+                tbody.innerHTML = filtered.map(emp => {
+                    let badgeClass = 'bg-secondary';
+                    let statusText = 'Missing';
+                    if (emp._status === 'valid') { badgeClass = 'bg-success'; statusText = 'Valid'; }
+                    else if (emp._status === 'expiring') { badgeClass = 'bg-warning text-dark'; statusText = 'Expiring Soon'; }
+                    else if (emp._status === 'expired') { badgeClass = 'bg-danger'; statusText = 'Expired'; }
+
+                    const expiryDisplay = emp._expiry ? new Date(emp._expiry).toLocaleDateString() : 'Not uploaded';
+
+                    return `
+                        <tr>
+                            <td><strong>${emp.full_name}</strong></td>
+                            <td>${emp.id_passport_number}</td>
+                            <td>${emp.nationality}</td>
+                            <td>${expiryDisplay}</td>
+                            <td><span class="badge ${badgeClass} status-badge">${statusText}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-warning edit-emp-btn" data-id="${emp.id}"><i class="fas fa-edit"></i> Edit</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Attach edit events
+                document.querySelectorAll('.edit-emp-btn').forEach(btn => {
+                    btn.addEventListener('click', () => openEditModal(btn.dataset.id));
+                });
+            }
+
+            // -------------------- Filter Change --------------------
+            document.getElementById('filter-status').addEventListener('change', function() {
+                renderTable(allEmployees, this.value);
             });
 
-            // ================= INIT =================
-            if (await checkAdmin()) {
-                await loadEmployees();
+            // -------------------- Edit Modal --------------------
+            function openEditModal(empId) {
+                const emp = allEmployees.find(e => e.id == empId);
+                if (!emp) return;
+                document.getElementById('edit-emp-id').value = emp.id;
+                document.getElementById('edit-full-name').value = emp.full_name;
+                document.getElementById('edit-id-number').value = emp.id_passport_number;
+                document.getElementById('edit-nationality').value = emp.nationality;
+                document.getElementById('edit-phone').value = emp.phone || '';
+                document.getElementById('edit-address').value = emp.address || '';
+                document.getElementById('edit-position').value = emp.job_position || '';
+                document.getElementById('edit-emp-date').value = emp.employment_date ? emp.employment_date.split('T')[0] : '';
+                new bootstrap.Modal(document.getElementById('editEmployeeModal')).show();
             }
 
+            document.getElementById('edit-employee-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('edit-emp-id').value;
+                const payload = {
+                    full_name: document.getElementById('edit-full-name').value.trim(),
+                    id_passport_number: document.getElementById('edit-id-number').value.trim(),
+                    nationality: document.getElementById('edit-nationality').value.trim(),
+                    phone: document.getElementById('edit-phone').value.trim(),
+                    address: document.getElementById('edit-address').value.trim(),
+                    job_position: document.getElementById('edit-position').value.trim(),
+                    employment_date: document.getElementById('edit-emp-date').value
+                };
+                try {
+                    const { error } = await supabase.from('employees').update(payload).eq('id', id);
+                    if (error) throw error;
+                    bootstrap.Modal.getInstance(document.getElementById('editEmployeeModal')).hide();
+                    // Refresh data
+                    await loadCompliance();
+                } catch (err) {
+                    alert('Update failed: ' + err.message);
+                }
+            });
+
+            // -------------------- Generate Report (simple alert with table data) --------------------
+            document.getElementById('generate-compliance-report').addEventListener('click', function() {
+                // Generate a simple printable view (just show as alert or open new window)
+                const filter = document.getElementById('filter-status').value;
+                let filtered = allEmployees;
+                if (filter === 'valid') filtered = allEmployees.filter(e => e._status === 'valid');
+                else if (filter === 'expiring') filtered = allEmployees.filter(e => e._status === 'expiring');
+                else if (filter === 'expired') filtered = allEmployees.filter(e => e._status === 'expired');
+                else if (filter === 'missing') filtered = allEmployees.filter(e => e._status === 'missing');
+
+                let reportText = 'Compliance Report - ' + new Date().toLocaleString() + '\n\n';
+                reportText += 'Employee | ID | Nationality | SA ID Expiry | Status\n';
+                reportText += '----------------------------------------------------------\n';
+                filtered.forEach(emp => {
+                    const expiryDisplay = emp._expiry ? new Date(emp._expiry).toLocaleDateString() : 'Not uploaded';
+                    reportText += `${emp.full_name} | ${emp.id_passport_number} | ${emp.nationality} | ${expiryDisplay} | ${emp._status}\n`;
+                });
+                // Open in new window for printing
+                const win = window.open('', '_blank');
+                win.document.write('<pre>' + reportText + '</pre>');
+                win.document.write('<button onclick="window.print()">Print</button>');
+                win.document.close();
+            });
+
+            // -------------------- Load All --------------------
+            async function loadCompliance() {
+                try {
+                    await fetchComplianceData();
+                    renderTable(allEmployees, document.getElementById('filter-status').value);
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById('compliance-tbody').innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error loading data: ${err.message}</td></tr>`;
+                }
+            }
+
+            // -------------------- Init --------------------
+            if (await checkAdmin()) {
+                await loadCompliance();
+            }
         })();
     </script>
 </body>
