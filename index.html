@@ -13,7 +13,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="css/style.css" />
 
-    <!-- Chat widget styles (inline for simplicity) -->
+    <!-- Chat widget styles -->
     <style>
         /* Chat Button */
         .chat-toggle {
@@ -27,7 +27,7 @@
             color: #fff;
             border: none;
             font-size: 28px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
             z-index: 9999;
             transition: all 0.3s ease;
             cursor: pointer;
@@ -36,24 +36,22 @@
             justify-content: center;
         }
 
-            .chat-toggle:hover {
-                transform: scale(1.08);
-                background: #2a5298;
-            }
+        .chat-toggle:hover {
+            transform: scale(1.08);
+            background: #2a5298;
+        }
 
-            .chat-toggle .fa-comment-dots {
-                animation: pulse 1.5s infinite;
-            }
+        .chat-toggle .fa-comment-dots {
+            animation: pulse 1.5s infinite;
+        }
 
         @keyframes pulse {
             0% {
                 transform: scale(1);
             }
-
             50% {
                 transform: scale(1.2);
             }
-
             100% {
                 transform: scale(1);
             }
@@ -69,7 +67,7 @@
             max-height: 500px;
             background: #fff;
             border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
             display: none;
             flex-direction: column;
             z-index: 9999;
@@ -78,9 +76,9 @@
             transition: all 0.3s ease;
         }
 
-            .chat-window.open {
-                display: flex;
-            }
+        .chat-window.open {
+            display: flex;
+        }
 
         .chat-header {
             background: #1e3c72;
@@ -92,13 +90,13 @@
             font-weight: 600;
         }
 
-            .chat-header .close-chat {
-                background: none;
-                border: none;
-                color: #fff;
-                font-size: 20px;
-                cursor: pointer;
-            }
+        .chat-header .close-chat {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+        }
 
         .chat-messages {
             flex: 1;
@@ -116,23 +114,42 @@
             max-width: 85%;
             padding: 10px 14px;
             border-radius: 16px;
-            line-height: 1.4;
+            line-height: 1.5;
             font-size: 0.95rem;
             word-wrap: break-word;
+            white-space: pre-wrap;
         }
 
-            .chat-message.bot {
-                background: #e9ecef;
-                align-self: flex-start;
-                border-bottom-left-radius: 4px;
-            }
+        .chat-message.bot {
+            background: #e9ecef;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
 
-            .chat-message.user {
-                background: #1e3c72;
-                color: #fff;
-                align-self: flex-end;
-                border-bottom-right-radius: 4px;
-            }
+        .chat-message.user {
+            background: #1e3c72;
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-message .highlight {
+            background: #ffc107;
+            color: #212529;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .chat-message .email {
+            background: #d4edda;
+            color: #155724;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-family: monospace;
+            font-size: 1rem;
+        }
 
         .chat-input-area {
             display: flex;
@@ -141,35 +158,35 @@
             background: #fff;
         }
 
-            .chat-input-area input {
-                flex: 1;
-                border: 1px solid #ced4da;
-                border-radius: 30px;
-                padding: 10px 16px;
-                font-size: 0.95rem;
-                outline: none;
-            }
+        .chat-input-area input {
+            flex: 1;
+            border: 1px solid #ced4da;
+            border-radius: 30px;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            outline: none;
+        }
 
-                .chat-input-area input:focus {
-                    border-color: #1e3c72;
-                    box-shadow: 0 0 0 3px rgba(30,60,114,0.15);
-                }
+        .chat-input-area input:focus {
+            border-color: #1e3c72;
+            box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.15);
+        }
 
-            .chat-input-area button {
-                margin-left: 10px;
-                background: #1e3c72;
-                color: #fff;
-                border: none;
-                border-radius: 30px;
-                padding: 0 20px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: 0.2s;
-            }
+        .chat-input-area button {
+            margin-left: 10px;
+            background: #1e3c72;
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 0 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
 
-                .chat-input-area button:hover {
-                    background: #2a5298;
-                }
+        .chat-input-area button:hover {
+            background: #2a5298;
+        }
 
         /* Typing indicator */
         .typing-indicator {
@@ -182,37 +199,102 @@
             max-width: 60px;
         }
 
-            .typing-indicator span {
-                width: 8px;
-                height: 8px;
-                background: #888;
-                border-radius: 50%;
-                animation: blink 1.4s infinite both;
-            }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #888;
+            border-radius: 50%;
+            animation: blink 1.4s infinite both;
+        }
 
-                .typing-indicator span:nth-child(2) {
-                    animation-delay: 0.2s;
-                }
-
-                .typing-indicator span:nth-child(3) {
-                    animation-delay: 0.4s;
-                }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes blink {
             0% {
                 opacity: 0.2;
                 transform: translateY(0);
             }
-
             50% {
                 opacity: 1;
                 transform: translateY(-6px);
             }
-
             100% {
                 opacity: 0.2;
                 transform: translateY(0);
             }
+        }
+
+        /* Quick reply buttons */
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 4px 16px 12px 16px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        .quick-replies button {
+            background: #e9ecef;
+            border: none;
+            border-radius: 50px;
+            padding: 5px 14px;
+            font-size: 0.8rem;
+            color: #1e3c72;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+        .quick-replies button:hover {
+            background: #1e3c72;
+            color: #fff;
+        }
+
+        /* ─── JOB LISTINGS – FULL TEXT, NO TRUNCATION ─── */
+        .job-card {
+            border-radius: 12px;
+            transition: box-shadow 0.2s;
+            border: 1px solid #e9ecef;
+        }
+        .job-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+        .job-card .job-description {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            color: #212529;
+        }
+        /* Ensure no ellipsis anywhere */
+        .job-card .job-description,
+        .job-card .job-title,
+        .job-card .job-company,
+        .job-card .job-location,
+        .job-card .job-salary {
+            text-overflow: clip;
+            overflow: visible;
+            white-space: normal;
+        }
+        /* Status badge */
+        .job-status-badge {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+        }
+        .job-status-badge.open {
+            background: #d4edda;
+            color: #155724;
+        }
+        .job-status-badge.closed {
+            background: #f8d7da;
+            color: #721c24;
         }
 
         /* Responsive */
@@ -222,6 +304,10 @@
                 right: 10px;
                 width: calc(100vw - 20px);
                 max-height: 60vh;
+            }
+            .quick-replies button {
+                font-size: 0.7rem;
+                padding: 4px 10px;
             }
         }
     </style>
@@ -297,8 +383,7 @@
         <div class="container">
             <div class="text-center mb-5">
                 <h2 class="section-title"><i class="fas fa-briefcase text-primary me-2"></i>Available Jobs</h2>
-                <p class="text-muted">Explore current openings or post a new position</p>
-                <!-- Supabase connection status badge -->
+                <p class="text-muted">Explore current openings – all details shown in full.</p>
                 <div id="supabase-status" class="mt-2">
                     <span class="badge bg-secondary"><i class="fas fa-spinner fa-spin me-1"></i> Checking connection…</span>
                 </div>
@@ -348,9 +433,9 @@
                 </div>
             </div>
 
-            <!-- Job Listings -->
+            <!-- Job Listings – rendered by custom script below -->
             <div id="job-listings">
-                <div class="text-center py-5">
+                <div class="text-center py-5" id="job-loading">
                     <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
                     <p class="mt-2 text-muted">Loading jobs…</p>
                 </div>
@@ -373,19 +458,31 @@
     </footer>
 
     <!-- ========== CHAT WIDGET ========== -->
-    <!-- Floating button -->
     <button class="chat-toggle" id="chatToggle" aria-label="Open chat">
         <i class="fas fa-comment-dots"></i>
     </button>
 
-    <!-- Chat window -->
     <div class="chat-window" id="chatWindow">
         <div class="chat-header">
             <span><i class="fas fa-robot me-2"></i>CompliBot</span>
             <button class="close-chat" id="closeChat">&times;</button>
         </div>
         <div class="chat-messages" id="chatMessages">
-            <div class="chat-message bot">👋 Hi there! I'm CompliBot, your digital assistant. Ask me anything about CompliTrack SA – features, how to get started, or where to find something.</div>
+            <div class="chat-message bot">
+                👋 Hi! I'm CompliBot, your job assistant. I can help you with:
+                • 📧 <b>How to apply</b> for jobs
+                • 📋 Current <b>open positions</b>
+                • 📄 What to include in your <b>application</b>
+                • ❓ Any other questions about <b>careers</b> at CompliTrack SA
+                <br /><br />
+                Just ask away – I'm here to help! 😊
+            </div>
+        </div>
+        <div class="quick-replies" id="quickReplies">
+            <button data-quick="How do I apply for a job?">📧 How to apply</button>
+            <button data-quick="What jobs are available?">📋 Open positions</button>
+            <button data-quick="What should I include in my application?">📄 Application tips</button>
+            <button data-quick="Do you have remote jobs?">🌍 Remote jobs?</button>
         </div>
         <div class="chat-input-area">
             <input type="text" id="chatInput" placeholder="Type your message…" autocomplete="off">
@@ -394,68 +491,216 @@
     </div>
 
     <!-- ========== SCRIPTS ========== -->
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
     </script>
-    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
     </script>
-    <!-- Custom jobs script -->
-    <script src="js/jobs.js">
-    </script>
 
-    <!-- Chat widget script (inline for simplicity) -->
+    <!-- ─── CUSTOM JOB RENDERER (FULL TEXT, NO TRUNCATION) ─── -->
     <script>
-        (function () {
+        (function() {
+
+            // ─── Supabase client ───
+            const supabase = window.supabase.createClient(
+                "https://rlfywkvyjoydpbvprtdt.supabase.co",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZnl3a3Z5am95ZHBidnBydGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzQ2MTEsImV4cCI6MjA5NzkxMDYxMX0.oF3BnxQD0AE_47ypbIA39iV0FGICbXZJPwOgiZTcjMk"
+            );
+
+            const container = document.getElementById('job-listings');
+            const statusBadge = document.getElementById('supabase-status');
+
+            // ─── Fetch & render jobs ───
+            async function loadJobs() {
+                try {
+                    statusBadge.innerHTML =
+                        '<span class="badge bg-warning text-dark"><i class="fas fa-spinner fa-spin me-1"></i> Loading jobs…</span>';
+
+                    const { data: jobs, error } = await supabase
+                        .from('jobs')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    statusBadge.innerHTML =
+                        `<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> ${jobs.length} job${jobs.length !== 1 ? 's' : ''} loaded</span>`;
+
+                    if (!jobs || jobs.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center py-5">
+                                <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                                <h5>No jobs posted yet</h5>
+                                <p class="text-muted">Check back later for new opportunities.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    // ─── Render each job with FULL description (no truncation) ───
+                    let html = '<div class="row g-4">';
+                    jobs.forEach(job => {
+                        const statusClass = job.status === 'open' ? 'open' : 'closed';
+                        const statusLabel = job.status === 'open' ? 'Open' : 'Closed';
+                        const desc = job.description || 'No description provided.';
+
+                        html += `
+                            <div class="col-md-6 col-lg-4">
+                                <div class="job-card card h-100 p-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5 class="job-title fw-bold mb-1">${escapeHtml(job.title)}</h5>
+                                        <span class="job-status-badge ${statusClass}">${statusLabel}</span>
+                                    </div>
+                                    <div class="job-company text-primary fw-semibold">${escapeHtml(job.company)}</div>
+                                    <div class="job-location text-muted small">
+                                        <i class="fas fa-map-pin me-1"></i>${escapeHtml(job.location || 'Location not specified')}
+                                    </div>
+                                    ${job.salary ? `<div class="job-salary text-success small"><i class="fas fa-coin me-1"></i>${escapeHtml(job.salary)}</div>` : ''}
+                                    <hr />
+                                    <div class="job-description">
+                                        ${escapeHtml(desc).replace(/\n/g, '<br>')}
+                                    </div>
+                                    <div class="mt-3">
+                                        <a href="mailto:careers@complitrack.co.za?subject=Application for ${encodeURIComponent(job.title)}" class="btn btn-primary btn-sm w-100">
+                                            <i class="fas fa-envelope me-1"></i> Apply via Email
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+
+                } catch (err) {
+                    console.error('❌ Error loading jobs:', err);
+                    statusBadge.innerHTML =
+                        `<span class="badge bg-danger"><i class="fas fa-exclamation-triangle me-1"></i> Failed to load jobs</span>`;
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i> Could not load jobs: ${escapeHtml(err.message)}
+                        </div>
+                    `;
+                }
+            }
+
+            // ─── Simple escape to prevent XSS ───
+            function escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // ─── Check auth status (to show/hide admin form) ───
+            async function checkAuth() {
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const { data: profile } = await supabase
+                            .from('profiles')
+                            .select('role')
+                            .eq('id', user.id)
+                            .single();
+                        if (profile && profile.role === 'admin') {
+                            document.getElementById('admin-job-form').classList.remove('d-none');
+                            // Show logout button etc.
+                            const logoutBtn = document.getElementById('logout-btn');
+                            logoutBtn.classList.remove('d-none');
+                            logoutBtn.addEventListener('click', async () => {
+                                await supabase.auth.signOut();
+                                location.reload();
+                            });
+                            document.getElementById('login-btn').classList.add('d-none');
+                            const dashBtn = document.getElementById('dashboard-btn');
+                            dashBtn.classList.remove('d-none');
+                            dashBtn.href = 'dashboard.html';
+                            // Show status
+                            document.getElementById('auth-status').classList.remove('d-none');
+                        }
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
+            // ─── Handle job posting (admin) ───
+            document.getElementById('job-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const payload = {
+                    title: document.getElementById('job-title').value.trim(),
+                    company: document.getElementById('job-company').value.trim(),
+                    location: document.getElementById('job-location').value.trim(),
+                    salary: document.getElementById('job-salary').value.trim() || null,
+                    status: document.getElementById('job-status').value,
+                    description: document.getElementById('job-description').value.trim(),
+                };
+
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) throw new Error('You must be logged in as admin.');
+
+                    const { error } = await supabase
+                        .from('jobs')
+                        .insert([{ ...payload, user_id: user.id }]);
+
+                    if (error) throw error;
+
+                    alert('✅ Job posted successfully!');
+                    form.reset();
+                    loadJobs();
+                } catch (err) {
+                    alert('❌ Failed to post job: ' + err.message);
+                }
+            });
+
+            // ─── Init ───
+            loadJobs();
+            checkAuth();
+
+            // ─── Chat widget (same as before, job-focused) ───
             const toggleBtn = document.getElementById('chatToggle');
             const chatWindow = document.getElementById('chatWindow');
             const closeBtn = document.getElementById('closeChat');
             const messages = document.getElementById('chatMessages');
             const input = document.getElementById('chatInput');
             const sendBtn = document.getElementById('chatSendBtn');
+            const quickBtns = document.querySelectorAll('#quickReplies button');
 
-            // Open/Close
             toggleBtn.addEventListener('click', () => {
                 chatWindow.classList.toggle('open');
-                if (chatWindow.classList.contains('open')) {
-                    input.focus();
-                }
+                if (chatWindow.classList.contains('open')) input.focus();
             });
-            closeBtn.addEventListener('click', () => {
-                chatWindow.classList.remove('open');
+            closeBtn.addEventListener('click', () => chatWindow.classList.remove('open'));
+
+            quickBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    input.value = btn.dataset.quick;
+                    sendMessage();
+                });
             });
 
-            // Send message
             function sendMessage() {
                 const text = input.value.trim();
                 if (!text) return;
-                // Add user message
                 appendMessage('user', text);
                 input.value = '';
-                // Simulate bot response
                 showTyping();
                 setTimeout(() => {
                     removeTyping();
-                    const reply = getBotReply(text);
-                    appendMessage('bot', reply);
-                }, 600 + Math.random() * 400);
+                    appendMessage('bot', getBotReply(text));
+                }, 500 + Math.random() * 400);
             }
 
             sendBtn.addEventListener('click', sendMessage);
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') sendMessage();
-            });
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-            // Append message
             function appendMessage(sender, text) {
                 const div = document.createElement('div');
                 div.className = `chat-message ${sender}`;
-                div.innerHTML = text;
+                div.innerHTML = text.replace(/\n/g, '<br>');
                 messages.appendChild(div);
                 messages.scrollTop = messages.scrollHeight;
             }
 
-            // Typing indicator
             function showTyping() {
                 const div = document.createElement('div');
                 div.className = 'typing-indicator';
@@ -470,62 +715,131 @@
                 if (el) el.remove();
             }
 
-            // Bot intelligence – simple keyword matching with a friendly personality
             function getBotReply(input) {
                 const lower = input.toLowerCase();
 
-                // Greetings
-                if (/(hi|hello|hey|howdy|good morning|good afternoon|good evening)/.test(lower)) {
-                    return "Hey there! 😊 How can I help you with CompliTrack SA today? You can ask about features, how to get started, or anything else!";
+                if (/(how to apply|apply for job|application process|send application|apply now|how do i apply|email for jobs|careers email|apply via email)/.test(
+                        lower)) {
+                    return `📧 <b>How to apply for a job at CompliTrack SA:</b>\n\n` +
+                        `1️⃣ Send your <b>CV</b> and a <b>brief cover letter</b> to:\n` +
+                        `   📩 <span class="email">careers@complitrack.co.za</span>\n\n` +
+                        `2️⃣ In the subject line, mention the <b>job title</b> you're applying for.\n\n` +
+                        `3️⃣ Our HR team will review your application and get back to you within 3–5 working days.\n\n` +
+                        `💡 <i>Tip:</i> Check the job listing for any specific requirements before applying!`;
                 }
 
-                // Features
-                if (/(feature|what can you do|capabilities|functionality)/.test(lower)) {
-                    return "We offer a complete employee compliance solution:\n• 📋 Employee records (IDs, passports, contacts)\n• 📎 Document upload & tracking (contracts, permits, visas)\n• ⏰ Expiry alerts for permits & contracts\n• 📊 Dashboard analytics (compliance, high-risk)\n• 💼 Job board – post and manage openings\n• 📄 Generate inspection-ready reports.\nAnything specific you'd like to know?";
+                if (/(what jobs|available jobs|open positions|job openings|current vacancies|list of jobs|positions available)/.test(
+                        lower)) {
+                    return `📋 <b>Current open positions at CompliTrack SA:</b>\n\n` +
+                        `• <b>Senior Developer</b> – Cape Town (Hybrid)\n` +
+                        `• <b>Junior Developer</b> – Cape Town (Remote possible)\n` +
+                        `• <b>HR Coordinator</b> – Johannesburg\n` +
+                        `• <b>Compliance Officer</b> – Cape Town\n` +
+                        `• <b>Accountant</b> – Durban\n` +
+                        `• <b>Administrator</b> – Cape Town\n\n` +
+                        `📧 To apply, email your CV to <span class="email">careers@complitrack.co.za</span> with the job title in the subject line.`;
                 }
 
-                // Getting started
-                if (/(start|begin|how to|sign up|register|create account)/.test(lower)) {
-                    return "To get started, simply click the **Login** button in the top right and then choose **Create an account**. Once your account is approved (or set as admin by your organisation), you'll have full access to manage employees, documents, and jobs. Need help with a specific step?";
+                if (/(what to include|application tips|cover letter|CV|resume|what should i include|what to send)/.test(
+                        lower)) {
+                    return `📄 <b>What to include in your application:</b>\n\n` +
+                        `✅ <b>CV / Resume</b> – up-to-date with your experience and qualifications\n` +
+                        `✅ <b>Cover letter</b> – briefly explain why you're interested and what you bring\n` +
+                        `✅ <b>Contact details</b> – phone number and email address\n` +
+                        `✅ <b>References</b> – at least 2 professional references (optional but helpful)\n\n` +
+                        `💡 <i>Pro tip:</i> Tailor your application to the specific job – it makes a big difference!\n\n` +
+                        `📧 Send everything to: <span class="email">careers@complitrack.co.za</span>`;
                 }
 
-                // Login / admin
-                if (/(login|log in|sign in|admin|access)/.test(lower)) {
-                    return "You can log in by clicking the **Login** button at the top of the page. If you're an admin, you'll be taken to the Dashboard where you can manage everything. If you don't have an account yet, you can create one from the login page. Let me know if you're having trouble!";
+                if (/(remote|work from home|wfh|hybrid|flexible|location|where is the job)/.test(lower)) {
+                    return `🌍 <b>Remote & hybrid opportunities:</b>\n\n` +
+                        `At CompliTrack SA, we embrace flexible working:\n\n` +
+                        `• <b>Fully remote</b> – available for certain roles (e.g., Developer, Designer)\n` +
+                        `• <b>Hybrid</b> – mix of office & remote (e.g., 2 days in-office, 3 remote)\n` +
+                        `• <b>On-site</b> – for roles that require physical presence (e.g., HR, Admin)\n\n` +
+                        `📧 Check the job listing for specific details, or email <span class="email">careers@complitrack.co.za</span> to ask about a particular position.`;
                 }
 
-                // Jobs
-                if (/(job|vacancy|career|position|openings)/.test(lower)) {
-                    return "💼 Our job board lists all open positions. If you're an admin, you can also post new jobs from the Dashboard. Regular users can view and apply for jobs (if we enable that feature). Want to see current openings? Scroll down to the Jobs section on this page!";
+                if (/(salary|pay|compensation|benefits|perks|package|earn|how much)/.test(lower)) {
+                    return `💰 <b>Salary & benefits:</b>\n\n` +
+                        `Salaries at CompliTrack SA are competitive and depend on the role and experience level.\n\n` +
+                        `Typical benefits include:\n` +
+                        `• 🏥 Medical aid contribution\n` +
+                        `• 📈 Performance bonuses\n` +
+                        `• 🏖️ 20+ days annual leave\n` +
+                        `• 📚 Learning & development budget\n` +
+                        `• 🚗 Travel allowance (for some roles)\n\n` +
+                        `📧 For specific salary information, please email <span class="email">careers@complitrack.co.za</span> with the job title you're interested in.`;
                 }
 
-                // Employees / documents
-                if (/(employee|staff|personnel|document|upload|contract|permit|visa)/.test(lower)) {
-                    return "You can manage all employee records and documents securely in the system. Admins can add employees, upload documents (IDs, permits, contracts), and set expiry dates – the system will then generate alerts for upcoming renewals. Need more detail? Ask away!";
+                if (/(requirement|qualification|experience needed|skills|what do i need|education)/.test(lower)) {
+                    return `🎯 <b>Typical requirements for our roles:</b>\n\n` +
+                        `• Relevant <b>qualification</b> (degree / diploma) – varies by role\n` +
+                        `• <b>Experience</b> – 1–5 years depending on the level\n` +
+                        `• <b>Skills</b> – technical or soft skills as listed in the job description\n` +
+                        `• <b>South African ID</b> or valid work permit\n` +
+                        `• Strong <b>communication</b> skills (English)\n\n` +
+                        `📋 Each job listing has specific requirements – check the description above.\n` +
+                        `📧 For more details, email <span class="email">careers@complitrack.co.za</span>.`;
                 }
 
-                // Reports
-                if (/(report|inspection|audit|compliance score)/.test(lower)) {
-                    return "📊 The Reports section lets you generate compliance summaries for inspections. You'll see a table with each employee's status, missing documents, and expired permits. It's a great way to stay audit‑ready. Try it out from the Dashboard!";
+                if (/(deadline|closing date|when to apply|apply by|application deadline|close date)/.test(lower)) {
+                    return `⏰ <b>Application deadlines:</b>\n\n` +
+                        `Most positions stay open until <b>filled</b> – we review applications on a rolling basis.\n\n` +
+                        `🟢 <b>Tip:</b> Apply as soon as possible – we start reviewing applications immediately.\n\n` +
+                        `📧 If a position has a specific closing date, it will be mentioned in the job listing.\n` +
+                        `For any questions, email <span class="email">careers@complitrack.co.za</span>.`;
                 }
 
-                // Help / support
-                if (/(help|support|assist|trouble|problem|issue)/.test(lower)) {
-                    return "I'm here to help! 😊 You can ask me about any feature, the registration process, or how to use the platform. If I can't answer, you can also reach out via the **Contact** page – our team will get back to you quickly.";
+                if (/(contact hr|talk to hr|hr email|human resources|speak to someone)/.test(lower)) {
+                    return `👋 <b>Contact our HR team:</b>\n\n` +
+                        `📧 Email: <span class="email">careers@complitrack.co.za</span>\n` +
+                        `📞 Phone: +27 21 555 0199 (Mon–Fri, 9am–5pm)\n\n` +
+                        `💬 You can also ask me anything – I'm here to help with job-related questions!`;
                 }
 
-                // Default / fallback
-                return "That's a great question! 🤔 I'm still learning, but I can point you to the right place. Try asking about features, getting started, login, jobs, or reports. Or you can visit the **Contact** page for more specific support.";
+                if (/(hi|hello|hey|howdy|good morning|good afternoon|good evening|how are you|yo|sup)/.test(lower)) {
+                    return `👋 Hey there! Welcome to the CompliTrack SA job assistant.\n\n` +
+                        `I can help you with:\n` +
+                        `• 📧 <b>How to apply</b> – I'll give you the email address and steps\n` +
+                        `• 📋 <b>Available jobs</b> – see what we're hiring for\n` +
+                        `• 📄 <b>Application tips</b> – what to include in your CV & cover letter\n` +
+                        `• ❓ Any other career-related questions\n\n` +
+                        `What would you like to know? 😊`;
+                }
+
+                if (/(thank|thanks|appreciate|bye|goodbye|see you|later|cheers)/.test(lower)) {
+                    return `😊 You're welcome! I'm glad I could help.\n\n` +
+                        `Remember, you can always email <span class="email">careers@complitrack.co.za</span> for more details.\n\n` +
+                        `Best of luck with your application! 🍀 Come back anytime if you have more questions.`;
+                }
+
+                if (/(about company|what does complitrack do|compliance platform|tell me about complitrack)/.test(lower)) {
+                    return `🏢 <b>About CompliTrack SA:</b>\n\n` +
+                        `CompliTrack SA is a South African platform that helps businesses manage employee compliance – think ID documents, work permits, contracts, and expiry tracking – all in one secure place.\n\n` +
+                        `We also have a <b>job board</b> where we post career opportunities for talented people like you!\n\n` +
+                        `🌐 Visit our <a href="about.html" style="color:#1e3c72;text-decoration:underline;">About page</a> to learn more.`;
+                }
+
+                return `🤔 That's a good question!\n\n` +
+                    `I can help you with:\n` +
+                    `• 📧 <b>How to apply</b> – email careers@complitrack.co.za\n` +
+                    `• 📋 <b>Available jobs</b> – see the list above\n` +
+                    `• 📄 <b>Application tips</b> – what to include\n` +
+                    `• ❓ Any other career questions\n\n` +
+                    `Try rephrasing your question, or ask me about one of these topics. I'm here to help! 😊`;
             }
 
-            // On load, show a welcome message after 1 sec (if chat is closed, it will appear when opened)
             setTimeout(() => {
-                // If no messages yet, add a friendly nudge
                 if (messages.children.length === 0) {
-                    appendMessage('bot', "👋 Hi! I'm CompliBot. Feel free to ask me anything about CompliTrack SA – I'm here to help!");
+                    appendMessage('bot',
+                        "👋 Hi! I'm CompliBot. Ask me about how to apply for jobs, what positions are open, or any other career questions. I'm here to help!"
+                        );
                 }
-            }, 1000);
+            }, 800);
+
         })();
     </script>
+
 </body>
 </html>
