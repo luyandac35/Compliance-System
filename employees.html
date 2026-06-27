@@ -25,11 +25,11 @@
             </button>
             <div class="collapse navbar-collapse" id="nav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.html"></a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
                     <li class="nav-item"><a class="nav-link active" href="dashboard.html">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="employees.html">Employees</a></li>
                     <li class="nav-item"><a class="nav-link" href="documents.html">Compliance</a></li>
-                    <li class="nav-item"><a class="nav-link" href="reports.html"></a></li>
+                    <li class="nav-item"><a class="nav-link" href="reports.html">Reports</a></li>
                 </ul>
                 <button class="btn btn-outline-danger btn-sm ms-lg-3" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
@@ -59,7 +59,8 @@
                                 <th>Nationality</th>
                                 <th>Position</th>
                                 <th>SA ID Expiry</th>
-                                <th>Compliance Status</th>
+                                <th>Auto Status</th>
+                                <th>Manual Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -127,6 +128,15 @@
                             <input type="date" id="sa-id-expiry" class="form-control" />
                             <small class="text-muted">Leave blank if not applicable or not uploaded.</small>
                         </div>
+                        <div class="mb-2">
+                            <label>Manual Compliance Status</label>
+                            <select id="manual-compliance" class="form-select">
+                                <option value="">Auto (based on expiry)</option>
+                                <option value="compliant">Compliant</option>
+                                <option value="noncompliant">Non‑Compliant</option>
+                            </select>
+                            <small class="text-muted">Overrides the automatic status if set.</small>
+                        </div>
                         <hr />
                         <h6><i class="fas fa-camera text-primary"></i> ID Photo</h6>
                         <div class="mb-2">
@@ -152,8 +162,7 @@
 
             console.log('✅ Supabase client ready');
 
-            // Use the existing 'documents' bucket (must exist and be public)
-            const STORAGE_BUCKET = 'documents'; // Changed from 'id_photos'
+            const STORAGE_BUCKET = 'documents';
 
             let currentUser = null;
             let allEmployees = [];
@@ -181,7 +190,7 @@
                 window.location.href = "index.html";
             });
 
-            // ---------- Load Employees with SA ID expiry and ID photo ----------
+            // ---------- Load Employees with SA ID expiry, ID photo, and manual status ----------
             async function loadEmployees() {
                 try {
                     console.log('📋 Fetching employees...');
@@ -223,20 +232,25 @@
                     employees.forEach(emp => {
                         // Expiry
                         const expiry = expiryMap[emp.id] || null;
-                        let status = 'missing', statusText = 'Missing', badgeClass = 'bg-secondary', expiryDisplay = 'Not uploaded';
+                        let autoStatus = 'missing', autoText = 'Missing', autoBadge = 'bg-secondary';
+                        let expiryDisplay = 'Not uploaded';
                         if (expiry) {
                             expiryDisplay = new Date(expiry).toLocaleDateString();
                             const expDate = new Date(expiry);
                             expDate.setHours(0,0,0,0);
-                            if (expDate < today) { status = 'expired'; statusText = 'Expired'; badgeClass = 'bg-danger'; }
-                            else if (expDate <= thirtyDaysLater) { status = 'expiring'; statusText = 'Expiring Soon'; badgeClass = 'bg-warning text-dark'; }
-                            else { status = 'valid'; statusText = 'Valid'; badgeClass = 'bg-success'; }
+                            if (expDate < today) { autoStatus = 'expired'; autoText = 'Expired'; autoBadge = 'bg-danger'; }
+                            else if (expDate <= thirtyDaysLater) { autoStatus = 'expiring'; autoText = 'Expiring Soon'; autoBadge = 'bg-warning text-dark'; }
+                            else { autoStatus = 'valid'; autoText = 'Valid'; autoBadge = 'bg-success'; }
                         }
                         emp._expiry = expiry;
                         emp._expiryDisplay = expiryDisplay;
-                        emp._status = status;
-                        emp._statusText = statusText;
-                        emp._badgeClass = badgeClass;
+                        emp._autoStatus = autoStatus;
+                        emp._autoText = autoText;
+                        emp._autoBadge = autoBadge;
+
+                        // Manual status (from compliance_status column)
+                        const manual = emp.compliance_status || null; // 'compliant', 'noncompliant', or null
+                        emp._manualStatus = manual;
 
                         // Photo
                         const photoPath = photoMap[emp.id] || null;
@@ -255,13 +269,20 @@
             function renderTable(employees) {
                 const tbody = document.querySelector('#employees-table tbody');
                 if (!employees || employees.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No employees yet.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No employees yet.</td></tr>';
                     return;
                 }
                 tbody.innerHTML = employees.map(emp => {
                     const photoHtml = emp._photoUrl 
                         ? `<img src="${emp._photoUrl}" class="id-thumb" alt="ID photo" />` 
                         : `<span class="text-muted"><i class="fas fa-user-circle fa-2x"></i></span>`;
+
+                    // Manual badge
+                    let manualBadge = 'bg-secondary';
+                    let manualText = 'Not set';
+                    if (emp._manualStatus === 'compliant') { manualBadge = 'bg-success'; manualText = 'Compliant'; }
+                    else if (emp._manualStatus === 'noncompliant') { manualBadge = 'bg-danger'; manualText = 'Non‑Compliant'; }
+
                     return `
                         <tr>
                             <td>${photoHtml}</td>
@@ -270,7 +291,8 @@
                             <td>${emp.nationality}</td>
                             <td>${emp.job_position}</td>
                             <td>${emp._expiryDisplay}</td>
-                            <td><span class="badge ${emp._badgeClass} status-badge">${emp._statusText}</span></td>
+                            <td><span class="badge ${emp._autoBadge} status-badge">${emp._autoText}</span></td>
+                            <td><span class="badge ${manualBadge} status-badge">${manualText}</span></td>
                             <td>
                                 <button class="btn btn-sm btn-warning edit-emp" data-id="${emp.id}"><i class="fas fa-edit"></i></button>
                                 <button class="btn btn-sm btn-danger delete-emp" data-id="${emp.id}"><i class="fas fa-trash"></i></button>
@@ -298,6 +320,7 @@
                     document.getElementById('position').value = emp.job_position;
                     document.getElementById('emp-date').value = emp.employment_date ? emp.employment_date.split('T')[0] : '';
                     document.getElementById('sa-id-expiry').value = emp._expiry || '';
+                    document.getElementById('manual-compliance').value = emp._manualStatus || '';
                     document.getElementById('id-photo').value = '';
 
                     new bootstrap.Modal(document.getElementById('employeeModal')).show();
@@ -311,7 +334,6 @@
             async function deleteEmployee(id) {
                 if (!confirm('Delete this employee? All associated documents will also be removed.')) return;
                 try {
-                    // Delete employee record (cascade will remove documents if foreign key is set)
                     const { error } = await supabase
                         .from('employees')
                         .delete()
@@ -324,7 +346,7 @@
                 }
             }
 
-            // ---------- Save Employee with ID photo upload ----------
+            // ---------- Save Employee with ID photo upload and manual compliance ----------
             document.getElementById('employee-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const id = document.getElementById('emp-id').value;
@@ -335,7 +357,8 @@
                     phone: document.getElementById('phone').value.trim(),
                     address: document.getElementById('address').value.trim(),
                     job_position: document.getElementById('position').value,
-                    employment_date: document.getElementById('emp-date').value
+                    employment_date: document.getElementById('emp-date').value,
+                    compliance_status: document.getElementById('manual-compliance').value || null
                 };
 
                 const saIdExpiry = document.getElementById('sa-id-expiry').value;
@@ -388,7 +411,6 @@
 
                     // --- Handle ID photo upload ---
                     if (photoFile) {
-                        // Check if an ID_PHOTO document already exists
                         const { data: existingPhoto, error: findPhotoErr } = await supabase
                             .from('documents')
                             .select('id, file_path')
@@ -397,12 +419,10 @@
                             .maybeSingle();
                         if (findPhotoErr) throw findPhotoErr;
 
-                        // Delete old file if exists
                         if (existingPhoto && existingPhoto.file_path) {
                             await supabase.storage.from(STORAGE_BUCKET).remove([existingPhoto.file_path]);
                         }
 
-                        // Upload new file inside the 'documents' bucket, with subfolder 'id_photos/'
                         const ext = photoFile.name.split('.').pop() || 'jpg';
                         const filePath = `id_photos/${employeeId}/photo_${Date.now()}.${ext}`;
                         const { error: uploadErr } = await supabase.storage
@@ -410,7 +430,6 @@
                             .upload(filePath, photoFile);
                         if (uploadErr) throw uploadErr;
 
-                        // Insert or update document record
                         if (existingPhoto) {
                             await supabase.from('documents')
                                 .update({ file_path: filePath, upload_date: new Date().toISOString() })
