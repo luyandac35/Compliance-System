@@ -36,65 +36,65 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-            #report-container .report-header {
-                text-align: center;
-                border-bottom: 3px solid #0d6efd;
-                padding-bottom: 12px;
-                margin-bottom: 20px;
-            }
+        #report-container .report-header {
+            text-align: center;
+            border-bottom: 3px solid #0d6efd;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
 
-                #report-container .report-header h1 {
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: #0d6efd;
-                    margin: 0;
-                }
+        #report-container .report-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0d6efd;
+            margin: 0;
+        }
 
-                #report-container .report-header p {
-                    color: #6c757d;
-                    margin: 0;
-                    font-size: 13px;
-                }
+        #report-container .report-header p {
+            color: #6c757d;
+            margin: 0;
+            font-size: 13px;
+        }
 
-            #report-container .report-sub {
-                display: flex;
-                justify-content: space-between;
-                font-size: 13px;
-                color: #495057;
-                margin-bottom: 15px;
-            }
+        #report-container .report-sub {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #495057;
+            margin-bottom: 15px;
+        }
 
-            #report-container table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 12px;
-            }
+        #report-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
 
-                #report-container table th {
-                    background: #0d6efd;
-                    color: white;
-                    padding: 8px 6px;
-                    text-align: left;
-                    font-weight: 600;
-                }
+        #report-container table th {
+            background: #0d6efd;
+            color: white;
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: 600;
+        }
 
-                #report-container table td {
-                    padding: 6px 6px;
-                    border-bottom: 1px solid #dee2e6;
-                }
+        #report-container table td {
+            padding: 6px 6px;
+            border-bottom: 1px solid #dee2e6;
+        }
 
-                #report-container table tr:nth-child(even) {
-                    background: #f8f9fa;
-                }
+        #report-container table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
 
-            #report-container .badge-pdf {
-                display: inline-block;
-                padding: 2px 10px;
-                border-radius: 50px;
-                font-size: 10px;
-                font-weight: 600;
-                color: white;
-            }
+        #report-container .badge-pdf {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 50px;
+            font-size: 10px;
+            font-weight: 600;
+            color: white;
+        }
 
         .badge-pdf.bg-success {
             background: #28a745;
@@ -135,11 +135,11 @@
             flex-wrap: wrap;
         }
 
-            #report-container .report-summary span {
-                background: #f1f3f5;
-                padding: 4px 16px;
-                border-radius: 50px;
-            }
+        #report-container .report-summary span {
+            background: #f1f3f5;
+            padding: 4px 16px;
+            border-radius: 50px;
+        }
     </style>
 </head>
 <body>
@@ -156,7 +156,6 @@
                     <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link active" href="employees.html">Employees</a></li>
                     <li class="nav-item"><a class="nav-link" href="documents.html">Compliance</a></li>
-                    
                 </ul>
                 <button class="btn btn-outline-danger btn-sm ms-lg-3" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
@@ -190,7 +189,7 @@
                                 <th>ID/Passport</th>
                                 <th>Nationality</th>
                                 <th>Position</th>
-                                <th>SA ID Expiry</th>
+                                <th>Passport Expiry</th>
                                 <th>Auto Status</th>
                                 <th>Manual Status</th>
                                 <th>Actions</th>
@@ -271,10 +270,10 @@
                         </div>
                         <div class="mb-2"><label>Employment Date</label><input type="date" id="emp-date" class="form-control" required /></div>
                         <hr />
-                        <h6><i class="fas fa-id-card text-primary"></i> SA ID Compliance</h6>
+                        <h6><i class="fas fa-passport text-primary"></i> Passport Compliance</h6>
                         <div class="mb-2">
-                            <label>Passport ID Expiry Date (if applicable)</label>
-                            <input type="date" id="sa-id-expiry" class="form-control" />
+                            <label>Passport Expiry Date (if applicable)</label>
+                            <input type="date" id="passport-expiry" class="form-control" />
                             <small class="text-muted">Leave blank if not applicable or not uploaded.</small>
                         </div>
                         <div class="mb-2">
@@ -289,7 +288,7 @@
                         <hr />
                         <h6><i class="fas fa-camera text-primary"></i> ID Photo</h6>
                         <div class="mb-2">
-                            <label>Upload passport (optional)</label>
+                            <label>Upload Passport Photo (optional)</label>
                             <input type="file" id="id-photo" class="form-control" accept="image/*" />
                             <small class="text-muted">Image will be stored and displayed in the employee list.</small>
                         </div>
@@ -340,7 +339,7 @@
                 window.location.href = "index.html";
             });
 
-            // ---------- Load Employees with SA ID expiry, ID photo, and manual status ----------
+            // ---------- Load Employees with Passport expiry, ID photo, and manual status ----------
             async function loadEmployees() {
                 try {
                     console.log('📋 Fetching employees...');
@@ -352,15 +351,15 @@
 
                     const empIds = employees.map(e => e.id);
 
-                    // Fetch SA ID expiry documents
-                    const { data: saDocs, error: saErr } = await supabase
+                    // Fetch Passport expiry documents (doc_type = 'PASSPORT')
+                    const { data: passportDocs, error: passportErr } = await supabase
                         .from('documents')
                         .select('employee_id, expiry_date')
-                        .eq('doc_type', 'SA_ID')
+                        .eq('doc_type', 'PASSPORT')
                         .in('employee_id', empIds);
-                    if (saErr) throw saErr;
+                    if (passportErr) throw passportErr;
 
-                    // Fetch ID photo documents
+                    // Fetch ID photo documents (doc_type = 'ID_PHOTO')
                     const { data: photoDocs, error: photoErr } = await supabase
                         .from('documents')
                         .select('employee_id, file_path')
@@ -370,7 +369,7 @@
 
                     // Map expiry & photo
                     const expiryMap = {};
-                    saDocs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
+                    passportDocs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
                     const photoMap = {};
                     photoDocs.forEach(d => { photoMap[d.employee_id] = d.file_path; });
 
@@ -482,7 +481,7 @@
                     document.getElementById('position').value = emp.job_position;
                     document.getElementById('emp-date').value = emp.employment_date ? emp.employment_date.split('T')[0] :
                     '';
-                    document.getElementById('sa-id-expiry').value = emp._expiry || '';
+                    document.getElementById('passport-expiry').value = emp._expiry || '';
                     document.getElementById('manual-compliance').value = emp._manualStatus || '';
                     document.getElementById('id-photo').value = '';
 
@@ -509,7 +508,7 @@
                 }
             }
 
-            // ---------- Save Employee with ID photo upload and manual compliance ----------
+            // ---------- Save Employee with passport expiry, photo upload, and manual compliance ----------
             document.getElementById('employee-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const id = document.getElementById('emp-id').value;
@@ -524,7 +523,7 @@
                     compliance_status: document.getElementById('manual-compliance').value || null
                 };
 
-                const saIdExpiry = document.getElementById('sa-id-expiry').value;
+                const passportExpiry = document.getElementById('passport-expiry').value;
                 const photoFile = document.getElementById('id-photo').files[0];
 
                 try {
@@ -547,24 +546,24 @@
                         employeeId = data[0].id;
                     }
 
-                    // --- Handle SA ID expiry ---
-                    if (saIdExpiry) {
+                    // --- Handle Passport expiry (doc_type = 'PASSPORT') ---
+                    if (passportExpiry) {
                         const { data: existingDoc, error: findErr } = await supabase
                             .from('documents')
                             .select('id')
                             .eq('employee_id', employeeId)
-                            .eq('doc_type', 'SA_ID')
+                            .eq('doc_type', 'PASSPORT')
                             .maybeSingle();
                         if (findErr) throw findErr;
                         if (existingDoc) {
-                            await supabase.from('documents').update({ expiry_date: saIdExpiry }).eq('id', existingDoc
+                            await supabase.from('documents').update({ expiry_date: passportExpiry }).eq('id', existingDoc
                             .id);
                         } else {
                             await supabase.from('documents').insert([{
                                 employee_id: employeeId,
-                                doc_type: 'SA_ID',
+                                doc_type: 'PASSPORT',
                                 file_path: 'manual',
-                                expiry_date: saIdExpiry,
+                                expiry_date: passportExpiry,
                                 uploaded_by: currentUser.id,
                                 upload_date: new Date().toISOString(),
                                 is_blurry: false,
@@ -700,7 +699,7 @@
                                 <th>ID/Passport</th>
                                 <th>Nationality</th>
                                 <th>Position</th>
-                                <th>SA ID Expiry</th>
+                                <th>Passport Expiry</th>
                                 <th>Auto Status</th>
                                 <th>Manual Status</th>
                             </tr>
