@@ -9,33 +9,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            background: #f8f9fa;
-        }
-        .stat-card {
-            border-radius: 10px;
-            padding: 15px;
-            color: #fff;
-        }
-        .stat-card.primary {
-            background: linear-gradient(135deg, #4e73df, #224abe);
-        }
-        .stat-card.success {
-            background: linear-gradient(135deg, #1cc88a, #13855c);
-        }
-        .stat-card.warning {
-            background: linear-gradient(135deg, #f6c23e, #dda20a);
-        }
-        .stat-card.danger {
-            background: linear-gradient(135deg, #e74a3b, #be2617);
-        }
-        .card-header {
-            font-weight: 600;
-        }
-        .other-input {
-            display: none;
-            margin-top: 5px;
-        }
+        body { background: #f8f9fa; }
+        .stat-card { border-radius: 10px; padding: 15px; color: #fff; }
+        .stat-card.primary { background: linear-gradient(135deg, #4e73df, #224abe); }
+        .stat-card.success { background: linear-gradient(135deg, #1cc88a, #13855c); }
+        .stat-card.warning { background: linear-gradient(135deg, #f6c23e, #dda20a); }
+        .stat-card.danger { background: linear-gradient(135deg, #e74a3b, #be2617); }
+        .stat-card.info { background: linear-gradient(135deg, #36b9cc, #258391); }
+        .card-header { font-weight: 600; }
+        .other-input { display: none; margin-top: 5px; }
         .alert-item {
             border-left: 4px solid;
             padding: 10px 14px;
@@ -51,18 +33,9 @@
         .alert-item.warning { border-left-color: #f6c23e; }
         .alert-item.info { border-left-color: #4e73df; }
         .alert-item.success { border-left-color: #1cc88a; }
-        .alert-item .icon {
-            font-size: 1.2rem;
-            width: 28px;
-            text-align: center;
-        }
-        .alert-item .msg {
-            flex: 1;
-            font-size: 0.95rem;
-        }
-        .alert-item .msg strong {
-            color: #1e3c72;
-        }
+        .alert-item .icon { font-size: 1.2rem; width: 28px; text-align: center; }
+        .alert-item .msg { flex: 1; font-size: 0.95rem; }
+        .alert-item .msg strong { color: #1e3c72; }
         .alert-item .badge-severity {
             font-size: 0.7rem;
             padding: 2px 10px;
@@ -74,20 +47,21 @@
         .alert-item .badge-severity.warning { background: #fff3cd; color: #856404; }
         .alert-item .badge-severity.info { background: #d1ecf1; color: #0c5460; }
         .alert-item .badge-severity.success { background: #d4edda; color: #155724; }
-        .alerts-scroll {
-            max-height: 300px;
-            overflow-y: auto;
+        .alerts-scroll { max-height: 300px; overflow-y: auto; }
+        .alerts-scroll::-webkit-scrollbar { width: 5px; }
+        .alerts-scroll::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        .alerts-scroll::-webkit-scrollbar-track { background: transparent; }
+        .compliance-badge {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.7rem;
+            border-radius: 50px;
+            font-weight: 600;
         }
-        .alerts-scroll::-webkit-scrollbar {
-            width: 5px;
-        }
-        .alerts-scroll::-webkit-scrollbar-thumb {
-            background: #ced4da;
-            border-radius: 10px;
-        }
-        .alerts-scroll::-webkit-scrollbar-track {
-            background: transparent;
-        }
+        .compliance-badge.compliant { background: #d4edda; color: #155724; }
+        .compliance-badge.noncompliant { background: #f8d7da; color: #721c24; }
+        .compliance-badge.missing { background: #fff3cd; color: #856404; }
+        .compliance-badge.partial { background: #d1ecf1; color: #0c5460; }
+        .status-icon { font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -227,11 +201,8 @@
             const value = select.value;
             if (value) {
                 const current = textarea.value.trim();
-                if (current) {
-                    textarea.value = current + "\n• " + value;
-                } else {
-                    textarea.value = "• " + value;
-                }
+                if (current) textarea.value = current + "\n• " + value;
+                else textarea.value = "• " + value;
                 select.value = '';
             }
         }
@@ -250,9 +221,7 @@
 
         function getFieldValue(selectId, otherId) {
             const select = document.getElementById(selectId);
-            if (select.value === 'Other') {
-                return document.getElementById(otherId).value.trim() || '';
-            }
+            if (select.value === 'Other') return document.getElementById(otherId).value.trim() || '';
             return select.value;
         }
 
@@ -290,7 +259,6 @@
 
             const container = document.getElementById('dashboard-content');
 
-            // ---------- Helpers ----------
             async function getExpiredPermits(employeeId) {
                 try {
                     const today = new Date().toISOString().split('T')[0];
@@ -342,17 +310,37 @@
                                 <div class="stat-card success"><h5><i class="fas fa-check-circle me-2"></i>Compliant</h5><h2 id="compliant-count">0</h2></div>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card warning"><h5><i class="fas fa-clock me-2"></i>Expired Permits</h5><h2 id="expired-permits-count">0</h2></div>
+                                <div class="stat-card danger"><h5><i class="fas fa-times-circle me-2"></i>Non‑Compliant</h5><h2 id="noncompliant-count">0</h2></div>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card danger"><h5><i class="fas fa-exclamation-triangle me-2"></i>Non‑Compliant</h5><h2 id="noncompliant-count">0</h2></div>
+                                <div class="stat-card info"><h5><i class="fas fa-clock me-2"></i>Expired Permits</h5><h2 id="expired-permits-count">0</h2></div>
+                            </div>
+                        </div>
+
+                        <!-- Compliant Employees -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <i class="fas fa-check-circle me-2"></i>Compliant Employees
+                                        <span class="badge bg-light text-dark ms-2" id="compliant-badge">0</span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover mb-0">
+                                                <thead><tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Position</th><th>Status</th></tr></thead>
+                                                <tbody id="compliant-tbody"><tr><td colspan="5" class="text-center text-muted">Loading...</td></tr></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Non‑Compliant Employees -->
                         <div class="row mb-4">
                             <div class="col-12">
-                                <div class="card">
+                                <div class="card border-danger">
                                     <div class="card-header bg-danger text-white">
                                         <i class="fas fa-exclamation-triangle me-2"></i>Non‑Compliant Employees
                                         <span class="badge bg-light text-dark ms-2" id="noncompliant-badge">0</span>
@@ -360,8 +348,8 @@
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
                                             <table class="table table-hover mb-0">
-                                                <thead><tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Risk Factor</th></tr></thead>
-                                                <tbody id="noncompliant-tbody"><tr><td colspan="4" class="text-center text-muted">Loading...</td></tr></tbody>
+                                                <thead><tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Position</th><th>Risk Factor</th></tr></thead>
+                                                <tbody id="noncompliant-tbody"><tr><td colspan="5" class="text-center text-muted">Loading...</td></tr></tbody>
                                             </table>
                                         </div>
                                     </div>
@@ -398,7 +386,7 @@
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
                                             <table class="table table-hover mb-0">
-                                                <thead><tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Position</th><th>Status</th></tr></thead>
+                                                <thead><tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Position</th><th>Compliance Status</th></tr></thead>
                                                 <tbody id="recent-employees-tbody">
                                                     <tr><td colspan="5" class="text-center text-muted">Loading employees...</td></tr>
                                                 </tbody>
@@ -535,7 +523,6 @@
                         </div>
                     `;
 
-                    // Load data
                     await loadStatsAndCompliance();
                     await loadRecentEmployees();
                     await loadJobsTable();
@@ -554,11 +541,10 @@
                 }
             }
 
-            // ---------- Stats + Non‑Compliant based on compliance status ----------
+            // ---------- Stats + Compliance tables ----------
             let complianceChart = null;
             async function loadStatsAndCompliance() {
                 try {
-                    // Fetch employees including manual compliance_status
                     const { data: employees, error } = await supabase
                         .from('employees')
                         .select('id, full_name, id_passport_number, nationality, job_position, compliance_status')
@@ -566,7 +552,6 @@
                     if (error) throw new Error('Failed to fetch employees: ' + error.message);
 
                     const empIds = employees.map(e => e.id);
-                    // Fetch PASSPORT documents
                     const { data: passportDocs, error: docErr } = await supabase
                         .from('documents')
                         .select('employee_id, expiry_date')
@@ -586,74 +571,127 @@
                     let compliantCount = 0;
                     let nonCompliantCount = 0;
                     let missingCount = 0;
-                    let nonCompliantEmployees = [];
                     let expiredPermitsCount = 0;
+                    let compliantEmployees = [];
+                    let nonCompliantEmployees = [];
+                    let employeeStatusMap = {};
 
                     for (const emp of employees) {
                         const expiredPermits = await getExpiredPermits(emp.id);
                         expiredPermitsCount += expiredPermits.length;
 
-                        let overallStatus = 'missing'; // default
                         const expiry = expiryMap[emp.id] || null;
-                        // Determine auto status
                         let autoStatus = 'missing';
+                        let expiryDisplay = 'Not uploaded';
                         if (expiry) {
+                            expiryDisplay = new Date(expiry).toLocaleDateString();
                             const expDate = new Date(expiry);
                             expDate.setHours(0, 0, 0, 0);
                             if (expDate < today) autoStatus = 'expired';
+                            else if (expDate <= thirtyDaysLater) autoStatus = 'expiring';
                             else autoStatus = 'valid';
                         } else {
                             autoStatus = 'missing';
                         }
 
-                        // Check manual override
+                        // Determine overall status with manual override
                         const manual = emp.compliance_status; // 'compliant', 'noncompliant', or null
+                        let overallStatus = 'missing';
+                        let statusLabel = 'Missing';
+                        let statusClass = 'missing';
+
                         if (manual === 'compliant') {
                             overallStatus = 'compliant';
+                            statusLabel = '✅ Compliant';
+                            statusClass = 'compliant';
                         } else if (manual === 'noncompliant') {
                             overallStatus = 'noncompliant';
+                            statusLabel = '❌ Non‑Compliant';
+                            statusClass = 'noncompliant';
                         } else {
-                            // use auto
-                            if (autoStatus === 'valid') overallStatus = 'compliant';
-                            else if (autoStatus === 'expired') overallStatus = 'noncompliant';
-                            else overallStatus = 'missing';
+                            if (autoStatus === 'valid' || autoStatus === 'expiring') {
+                                overallStatus = 'compliant';
+                                statusLabel = '✅ Compliant';
+                                statusClass = 'compliant';
+                            } else if (autoStatus === 'expired') {
+                                overallStatus = 'noncompliant';
+                                statusLabel = '❌ Non‑Compliant';
+                                statusClass = 'noncompliant';
+                            } else {
+                                overallStatus = 'missing';
+                                statusLabel = '⚠️ Missing';
+                                statusClass = 'missing';
+                            }
                         }
 
-                        // Count for stats
-                        if (overallStatus === 'compliant') compliantCount++;
-                        else if (overallStatus === 'noncompliant') {
+                        emp._overallStatus = overallStatus;
+                        emp._statusLabel = statusLabel;
+                        emp._statusClass = statusClass;
+                        emp._expiry = expiry;
+                        emp._expiryDisplay = expiryDisplay;
+                        emp._autoStatus = autoStatus;
+
+                        employeeStatusMap[emp.id] = overallStatus;
+
+                        if (overallStatus === 'compliant') {
+                            compliantCount++;
+                            compliantEmployees.push(emp);
+                        } else if (overallStatus === 'noncompliant') {
                             nonCompliantCount++;
-                            nonCompliantEmployees.push({
-                                ...emp,
-                                riskFactor: expiry ? 'Passport expired on ' + new Date(expiry).toLocaleDateString() :
-                                    'No passport uploaded'
-                            });
+                            let riskReason = '';
+                            if (manual === 'noncompliant') riskReason = 'Manually marked as non‑compliant';
+                            else if (autoStatus === 'expired') riskReason = 'Passport expired on ' + expiryDisplay;
+                            else riskReason = 'No passport uploaded';
+                            nonCompliantEmployees.push({ ...emp, riskReason });
                         } else {
                             missingCount++;
+                            // Also add to non-compliant for visibility
+                            nonCompliantCount++;
+                            nonCompliantEmployees.push({ ...emp, riskReason: 'No passport uploaded' });
                         }
                     }
 
+                    // Update stats
                     document.getElementById('total-employees').textContent = total;
                     document.getElementById('compliant-count').textContent = compliantCount;
-                    document.getElementById('expired-permits-count').textContent = expiredPermitsCount;
                     document.getElementById('noncompliant-count').textContent = nonCompliantCount;
+                    document.getElementById('expired-permits-count').textContent = expiredPermitsCount;
+                    document.getElementById('compliant-badge').textContent = compliantCount;
                     document.getElementById('noncompliant-badge').textContent = nonCompliantCount;
 
-                    const riskTbody = document.getElementById('noncompliant-tbody');
-                    if (nonCompliantEmployees.length === 0) {
-                        riskTbody.innerHTML = '<tr><td colspan="4" class="text-center text-success">✅ All employees are compliant.</td></tr>';
+                    // Render Compliant table
+                    const compliantTbody = document.getElementById('compliant-tbody');
+                    if (compliantEmployees.length === 0) {
+                        compliantTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No compliant employees yet.</td></tr>';
                     } else {
-                        riskTbody.innerHTML = nonCompliantEmployees.map(emp => `
+                        compliantTbody.innerHTML = compliantEmployees.map(emp => `
                             <tr>
                                 <td><strong>${emp.full_name}</strong></td>
                                 <td>${emp.id_passport_number}</td>
                                 <td>${emp.nationality}</td>
-                                <td><span class="badge bg-danger">${emp.riskFactor}</span></td>
+                                <td>${emp.job_position || 'N/A'}</td>
+                                <td><span class="compliance-badge compliant"><i class="fas fa-check-circle me-1"></i>Compliant</span></td>
                             </tr>
                         `).join('');
                     }
 
-                    // Chart – now shows Compliant, Non‑Compliant, Missing, and Expired Permits
+                    // Render Non-Compliant table
+                    const nonCompliantTbody = document.getElementById('noncompliant-tbody');
+                    if (nonCompliantEmployees.length === 0) {
+                        nonCompliantTbody.innerHTML = '<tr><td colspan="5" class="text-center text-success">✅ All employees are compliant!</td></tr>';
+                    } else {
+                        nonCompliantTbody.innerHTML = nonCompliantEmployees.map(emp => `
+                            <tr>
+                                <td><strong>${emp.full_name}</strong></td>
+                                <td>${emp.id_passport_number}</td>
+                                <td>${emp.nationality}</td>
+                                <td>${emp.job_position || 'N/A'}</td>
+                                <td><span class="badge bg-danger">${emp.riskReason}</span></td>
+                            </tr>
+                        `).join('');
+                    }
+
+                    // Chart
                     const ctx = document.getElementById('complianceChart').getContext('2d');
                     if (complianceChart) complianceChart.destroy();
                     complianceChart = new Chart(ctx, {
@@ -669,7 +707,7 @@
                     });
                     console.log('✅ Stats & compliance loaded');
 
-                    // Generate alerts based on overall status
+                    // Generate alerts
                     await generateAlerts(employees, expiryMap, today, thirtyDaysLater);
 
                 } catch (err) {
@@ -678,7 +716,7 @@
                 }
             }
 
-            // ---------- Generate dynamic alerts (now using compliance status) ----------
+            // ---------- Generate alerts ----------
             async function generateAlerts(employees, expiryMap, today, thirtyDaysLater) {
                 const container = document.getElementById('alerts-list');
                 let alerts = [];
@@ -688,10 +726,13 @@
                     const expiry = expiryMap[emp.id] || null;
                     let overallStatus = 'missing';
                     let autoStatus = 'missing';
+                    let expiryDisplay = 'Not uploaded';
                     if (expiry) {
+                        expiryDisplay = new Date(expiry).toLocaleDateString();
                         const expDate = new Date(expiry);
                         expDate.setHours(0, 0, 0, 0);
                         if (expDate < today) autoStatus = 'expired';
+                        else if (expDate <= thirtyDaysLater) autoStatus = 'expiring';
                         else autoStatus = 'valid';
                     } else {
                         autoStatus = 'missing';
@@ -700,15 +741,16 @@
                     if (manual === 'compliant') overallStatus = 'compliant';
                     else if (manual === 'noncompliant') overallStatus = 'noncompliant';
                     else {
-                        if (autoStatus === 'valid') overallStatus = 'compliant';
+                        if (autoStatus === 'valid' || autoStatus === 'expiring') overallStatus = 'compliant';
                         else if (autoStatus === 'expired') overallStatus = 'noncompliant';
                         else overallStatus = 'missing';
                     }
 
                     if (overallStatus === 'noncompliant') {
-                        let reason = expiry ? 'Passport expired on ' + new Date(expiry).toLocaleDateString() :
-                            'No passport uploaded';
+                        let reason = '';
                         if (manual === 'noncompliant') reason = 'Manually marked as non‑compliant';
+                        else if (autoStatus === 'expired') reason = 'Passport expired on ' + expiryDisplay;
+                        else reason = 'No passport uploaded';
                         alerts.push({
                             severity: 'danger',
                             icon: 'fa-exclamation-circle',
@@ -723,7 +765,6 @@
                             badge: 'Missing'
                         });
                     } else if (overallStatus === 'compliant' && expiry) {
-                        // Check if expiring soon (within 30 days) but still compliant
                         const expDate = new Date(expiry);
                         expDate.setHours(0, 0, 0, 0);
                         if (expDate <= thirtyDaysLater && expDate >= today) {
@@ -749,7 +790,6 @@
                     }
                 }
 
-                // Sort: danger first, then warning, then info
                 const order = { danger: 0, warning: 1, info: 2 };
                 alerts.sort((a, b) => order[a.severity] - order[b.severity]);
                 const topAlerts = alerts.slice(0, 10);
@@ -768,7 +808,7 @@
                 `).join('');
             }
 
-            // ---------- Recent Employees ----------
+            // ---------- Recent Employees with compliance status ----------
             async function loadRecentEmployees() {
                 const tbody = document.getElementById('recent-employees-tbody');
                 try {
@@ -776,27 +816,76 @@
                         .from('employees')
                         .select('*')
                         .order('created_at', { ascending: false })
-                        .limit(5);
+                        .limit(10);
                     if (error) throw error;
                     if (!employees || employees.length === 0) {
                         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No employees found.</td></tr>';
                         return;
                     }
-                    tbody.innerHTML = employees.map(emp => `
-                        <tr>
-                            <td><strong>${emp.full_name}</strong></td>
-                            <td>${emp.id_passport_number}</td>
-                            <td>${emp.nationality}</td>
-                            <td>${emp.job_position || 'N/A'}</td>
-                            <td><span class="badge bg-success">Active</span></td>
-                        </tr>
-                    `).join('');
+
+                    // Fetch passport expiry for each
+                    const empIds = employees.map(e => e.id);
+                    const { data: passportDocs } = await supabase
+                        .from('documents')
+                        .select('employee_id, expiry_date')
+                        .eq('doc_type', 'PASSPORT')
+                        .in('employee_id', empIds);
+
+                    const expiryMap = {};
+                    passportDocs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    tbody.innerHTML = employees.map(emp => {
+                        const manual = emp.compliance_status;
+                        const expiry = expiryMap[emp.id] || null;
+                        let status = 'missing';
+                        let statusLabel = '⚠️ Missing';
+                        let statusClass = 'missing';
+
+                        if (manual === 'compliant') {
+                            status = 'compliant';
+                            statusLabel = '✅ Compliant';
+                            statusClass = 'compliant';
+                        } else if (manual === 'noncompliant') {
+                            status = 'noncompliant';
+                            statusLabel = '❌ Non‑Compliant';
+                            statusClass = 'noncompliant';
+                        } else if (expiry) {
+                            const expDate = new Date(expiry);
+                            expDate.setHours(0, 0, 0, 0);
+                            if (expDate < today) {
+                                status = 'noncompliant';
+                                statusLabel = '❌ Non‑Compliant';
+                                statusClass = 'noncompliant';
+                            } else {
+                                status = 'compliant';
+                                statusLabel = '✅ Compliant';
+                                statusClass = 'compliant';
+                            }
+                        } else {
+                            status = 'missing';
+                            statusLabel = '⚠️ Missing';
+                            statusClass = 'missing';
+                        }
+
+                        return `
+                            <tr>
+                                <td><strong>${emp.full_name}</strong></td>
+                                <td>${emp.id_passport_number}</td>
+                                <td>${emp.nationality}</td>
+                                <td>${emp.job_position || 'N/A'}</td>
+                                <td><span class="compliance-badge ${statusClass}">${statusLabel}</span></td>
+                            </tr>
+                        `;
+                    }).join('');
                 } catch (err) {
                     tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error loading employees: ${err.message}</td></tr>`;
                 }
             }
 
-            // ---------- Job functions (unchanged) ----------
+            // ---------- Job functions ----------
             async function handleJobPost(e) {
                 e.preventDefault();
                 const title = getFieldValue('job-title-select', 'job-title-other') || document.getElementById('job-title-other').value.trim();
@@ -820,15 +909,7 @@
                 try {
                     const { error } = await supabase
                         .from('jobs')
-                        .insert([{
-                            title,
-                            company,
-                            location,
-                            salary: salary || null,
-                            description,
-                            status,
-                            user_id: user.id
-                        }]);
+                        .insert([{ title, company, location, salary: salary || null, description, status, user_id: user.id }]);
                     if (error) throw error;
                     document.getElementById('job-post-feedback').innerHTML = `<div class="alert alert-success">✅ Job posted successfully!</div>`;
                     document.getElementById('job-posting-form').reset();
