@@ -3,23 +3,301 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Compliance - CompliTrack SA</title>
+    <title>Compliance Dashboard - CompliTrack SA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="stylesheet" href="/css/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #f8f9fa; }
-        .card { border-radius: 12px; }
-        .status-badge { font-size: 0.85rem; padding: 0.4rem 0.7rem; }
-        .compliance-select { min-width: 130px; }
-        .toast-container { position: fixed; top: 80px; right: 20px; z-index: 9999; }
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .card {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            transition: box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.10);
+        }
+
+        .card-header {
+            border-radius: 16px 16px 0 0 !important;
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+        }
+
+        .employee-row {
+            cursor: pointer;
+            transition: background 0.15s;
+            border-radius: 12px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 4px;
+        }
+
+        .employee-row:hover {
+            background: #f8f9fc;
+        }
+
+        .employee-row .chevron {
+            transition: transform 0.25s ease;
+            display: inline-block;
+        }
+
+        .employee-row .chevron.open {
+            transform: rotate(90deg);
+        }
+
+        .employee-detail {
+            overflow: hidden;
+            transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.25s ease;
+            max-height: 0;
+            opacity: 0;
+            padding: 0 1rem;
+        }
+
+        .employee-detail.open {
+            max-height: 1200px;
+            opacity: 1;
+            padding: 0.75rem 1rem 1rem 1rem;
+        }
+
+        .compliance-badge {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 50px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .compliance-badge.compliant {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .compliance-badge.non-compliant {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .compliance-badge.partial {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .doc-item {
+            background: #fafbfc;
+            border-radius: 10px;
+            padding: 0.6rem 0.9rem;
+            margin-bottom: 6px;
+            border-left: 4px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .doc-item.valid {
+            border-left-color: #28a745;
+        }
+
+        .doc-item.expired {
+            border-left-color: #dc3545;
+        }
+
+        .doc-item.warning {
+            border-left-color: #ffc107;
+        }
+
+        .doc-item .doc-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .doc-item .doc-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .stat-card {
+            padding: 1rem 1.25rem;
+            border-radius: 14px;
+            background: white;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .stat-card.green .number {
+            color: #28a745;
+        }
+        .stat-card.red .number {
+            color: #dc3545;
+        }
+        .stat-card.yellow .number {
+            color: #ffc107;
+        }
+        .stat-card.blue .number {
+            color: #007bff;
+        }
+
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: border-color 0.2s;
+            background: #fafbfc;
+        }
+
+        .upload-area:hover {
+            border-color: #007bff;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-area .upload-label {
+            cursor: pointer;
+            color: #007bff;
+            font-weight: 500;
+        }
+
+        .upload-area .upload-label:hover {
+            text-decoration: underline;
+        }
+
+        .btn-toggle-compliance {
+            border-radius: 50px;
+            padding: 0.2rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-pill {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-pill.green {
+            background: #28a745;
+        }
+        .status-pill.red {
+            background: #dc3545;
+        }
+        .status-pill.yellow {
+            background: #ffc107;
+        }
+
+        @media (max-width: 768px) {
+            .doc-item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .doc-item .doc-actions {
+                justify-content: flex-end;
+                margin-top: 4px;
+            }
+            .stat-card .number {
+                font-size: 1.5rem;
+            }
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .fade-transition {
+            transition: all 0.2s ease;
+        }
+
+        .no-docs-msg {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 0.9rem;
+            padding: 0.5rem 0;
+        }
+
+        /* scrollable employee list */
+        .employee-list-container {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .employee-list-container::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .employee-list-container::-webkit-scrollbar-thumb {
+            background: #c1c7cd;
+            border-radius: 10px;
+        }
+
+        .employee-list-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .filter-bar .form-select,
+        .filter-bar .form-control {
+            width: auto;
+            min-width: 150px;
+        }
+
+        .badge-doc-type {
+            font-size: 0.7rem;
+            background: #e9ecef;
+            color: #495057;
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
 
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg bg-white shadow-sm">
+    <nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
         <div class="container">
             <a class="navbar-brand text-primary fw-bold" href="/"><i class="fas fa-shield-alt text-warning me-2"></i>CompliTrack SA</a>
             <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
@@ -39,127 +317,242 @@
     </nav>
 
     <!-- Toast container -->
-    <div class="toast-container" id="toast-container">
-        <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
-            <div class="d-flex">
-                <div class="toast-body" id="toastMessage">Compliance status updated!</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- Main Content -->
-    <div class="container-fluid mt-4">
-        <h3><i class="fas fa-clipboard-check text-primary me-2"></i>Employee Compliance Overview</h3>
-        <div class="mb-3">
-            <a href="/dashboard.html" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-            <a href="/employees.html" class="btn btn-info btn-sm ms-2"><i class="fas fa-users"></i> Manage Employees</a>
+    <div class="container mt-4">
+
+        <!-- Page Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="mb-0"><i class="fas fa-clipboard-check text-primary me-2"></i>Compliance Dashboard</h3>
+                <p class="text-muted mb-0">Manage employee compliance and document status</p>
+            </div>
+            <div>
+                <a href="dashboard.html" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+                <a href="employees.html" class="btn btn-outline-info btn-sm ms-1"><i class="fas fa-users"></i> Employees</a>
+                <button class="btn btn-outline-primary btn-sm ms-1" id="refreshBtn"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
         </div>
 
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-id-card me-2"></i>SA ID Compliance Status</span>
-                        <div>
-                            <select id="filter-status" class="form-select form-select-sm bg-light" style="width:auto;display:inline-block;">
-                                <option value="all">All Employees</option>
-                                <option value="valid">Valid ID</option>
-                                <option value="expiring">Expiring Soon (≤30 days)</option>
-                                <option value="expired">Expired ID</option>
-                                <option value="missing">Missing ID</option>
-                                <option value="compliant">Manually Compliant</option>
-                                <option value="noncompliant">Manually Non‑Compliant</option>
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4" id="statsRow">
+            <div class="col-6 col-md-3">
+                <div class="stat-card blue">
+                    <div class="number" id="totalEmployees">0</div>
+                    <div class="label">Total Employees</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card green">
+                    <div class="number" id="compliantCount">0</div>
+                    <div class="label"><i class="fas fa-check-circle text-success me-1"></i>Compliant</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card red">
+                    <div class="number" id="nonCompliantCount">0</div>
+                    <div class="label"><i class="fas fa-times-circle text-danger me-1"></i>Non-Compliant</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card yellow">
+                    <div class="number" id="partialCount">0</div>
+                    <div class="label"><i class="fas fa-exclamation-triangle text-warning me-1"></i>Partial</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- LEFT: Employee List -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-white border-bottom d-flex flex-wrap justify-content-between align-items-center">
+                        <span><i class="fas fa-user-check me-2 text-primary"></i>Employee Compliance</span>
+                        <span class="badge bg-light text-dark fw-normal" id="employeeCountBadge">0 employees</span>
+                    </div>
+                    <div class="card-body p-3">
+
+                        <!-- Filter Bar -->
+                        <div class="filter-bar">
+                            <input type="text" class="form-control form-control-sm" id="searchEmployee" placeholder="🔍 Search by name..." style="flex:1;min-width:140px;" />
+                            <select class="form-select form-select-sm" id="filterCompliance" style="width:auto;min-width:130px;">
+                                <option value="all">All Status</option>
+                                <option value="compliant">✅ Compliant</option>
+                                <option value="non-compliant">❌ Non-Compliant</option>
+                                <option value="partial">⚠️ Partial</option>
                             </select>
-                            <button class="btn btn-success btn-sm ms-2" id="generate-compliance-report"><i class="fas fa-file-pdf"></i> Generate Report</button>
+                            <button class="btn btn-sm btn-outline-secondary" id="clearFiltersBtn"><i class="fas fa-times"></i> Clear</button>
+                        </div>
+
+                        <!-- Employee List -->
+                        <div class="employee-list-container" id="employeeListContainer">
+                            <div id="employeeList">
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading employees...
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Employee</th>
-                                        <th>ID/Passport</th>
-                                        <th>Nationality</th>
-                                        <th>SA ID Expiry</th>
-                                        <th>Auto Status</th>
-                                        <th>Manual Compliance</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="compliance-tbody">
-                                    <tr><td colspan="7" class="text-center text-muted">Loading...</td></tr>
-                                </tbody>
-                            </table>
+                </div>
+            </div>
+
+            <!-- RIGHT: Upload / Employee Detail -->
+            <div class="col-lg-4">
+                <!-- Selected Employee Info -->
+                <div class="card mb-3" id="selectedEmployeeCard">
+                    <div class="card-header bg-white border-bottom">
+                        <i class="fas fa-user me-2 text-primary"></i>Employee Details
+                    </div>
+                    <div class="card-body">
+                        <div id="selectedEmployeeInfo" class="text-center py-3 text-muted">
+                            <i class="fas fa-hand-pointer fa-2x d-block mb-2"></i>
+                            Select an employee from the list to manage documents.
                         </div>
+                        <div id="selectedEmployeeActions" style="display:none;">
+                            <div class="d-flex flex-wrap gap-2 justify-content-center mt-2">
+                                <button class="btn btn-sm btn-success btn-toggle-compliance" id="markCompliantBtn">
+                                    <i class="fas fa-check"></i> Mark Compliant
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-toggle-compliance" id="markNonCompliantBtn">
+                                    <i class="fas fa-times"></i> Mark Non-Compliant
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Document -->
+                <div class="card">
+                    <div class="card-header bg-white border-bottom">
+                        <i class="fas fa-cloud-upload-alt me-2 text-primary"></i>Upload Document
+                    </div>
+                    <div class="card-body">
+                        <form id="upload-doc-form" enctype="multipart/form-data">
+                            <div class="mb-2">
+                                <label class="form-label fw-semibold small">Employee</label>
+                                <select id="doc-employee-select" class="form-select form-select-sm" required>
+                                    <option value="">-- Choose employee --</option>
+                                </select>
+                                <input type="hidden" id="doc-employee-id" />
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label fw-semibold small">Document Type</label>
+                                <select name="doc_type" class="form-select form-select-sm" required>
+                                    <option value="SA_ID">South African ID</option>
+                                    <option value="PASSPORT">Passport</option>
+                                    <option value="WORK_PERMIT">Work Permit</option>
+                                    <option value="VISA">Visa</option>
+                                    <option value="CONTRACT">Contract</option>
+                                    <option value="QUALIFICATION">Qualification</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label fw-semibold small">Expiry Date (if applicable)</label>
+                                <input type="date" name="expiry_date" class="form-control form-control-sm" />
+                            </div>
+
+                            <div class="upload-area mb-2">
+                                <label class="upload-label d-block" for="docFileInput">
+                                    <i class="fas fa-file-upload fa-2x d-block mb-1"></i>
+                                    <span>Click to select file</span>
+                                    <span class="d-block small text-muted">PDF or image, max 10MB</span>
+                                </label>
+                                <input type="file" name="document" id="docFileInput" accept="image/*,application/pdf" required />
+                                <div id="fileNameDisplay" class="small text-muted mt-1"></div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 btn-sm"><i class="fas fa-upload me-2"></i>Upload</button>
+                        </form>
+                        <div id="upload-feedback" class="mt-2"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Employee Modal -->
-    <div class="modal fade" id="editEmployeeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Employee</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="edit-employee-form">
-                        <input type="hidden" id="edit-emp-id" />
-                        <div class="mb-2"><label>Full Name</label><input type="text" id="edit-full-name" class="form-control" required /></div>
-                        <div class="mb-2"><label>ID/Passport Number</label><input type="text" id="edit-id-number" class="form-control" required /></div>
-                        <div class="mb-2"><label>Nationality</label><input type="text" id="edit-nationality" class="form-control" required /></div>
-                        <div class="mb-2"><label>Phone</label><input type="text" id="edit-phone" class="form-control" required /></div>
-                        <div class="mb-2"><label>Address</label><textarea id="edit-address" class="form-control" rows="2"></textarea></div>
-                        <div class="mb-2"><label>Job Position</label><input type="text" id="edit-position" class="form-control" required /></div>
-                        <div class="mb-2"><label>Employment Date</label><input type="date" id="edit-emp-date" class="form-control" required /></div>
-                        <hr />
-                        <div class="mb-2">
-                            <label>Manual Compliance Status</label>
-                            <select id="edit-compliance-status" class="form-select">
-                                <option value="">Not set (auto)</option>
-                                <option value="compliant">Compliant</option>
-                                <option value="noncompliant">Non‑Compliant</option>
-                            </select>
-                            <small class="text-muted">Overrides automatic SA ID expiry status.</small>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Update Employee</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+    </script>
     <script>
-        (async function () {
-            // -------------------- Supabase --------------------
+        (async function() {
+
+            // ================= SUPABASE =================
             const supabase = window.supabase.createClient(
                 "https://rlfywkvyjoydpbvprtdt.supabase.co",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZnl3a3Z5am95ZHBidnBydGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzQ2MTEsImV4cCI6MjA5NzkxMDYxMX0.oF3BnxQD0AE_47ypbIA39iV0FGICbXZJPwOgiZTcjMk"
             );
+            window._db = supabase;
 
+            const STORAGE_BUCKET = "documents";
             let currentUser = null;
             let allEmployees = [];
+            let allDocuments = [];
+            let expandedEmployeeId = null;
+            let selectedEmployeeId = null;
+            let complianceOverrides = {}; // local override cache
 
-            // -------------------- Toast helper --------------------
-            function showToast(message) {
-                const toastEl = document.getElementById('successToast');
-                document.getElementById('toastMessage').textContent = message;
-                const toast = new bootstrap.Toast(toastEl);
-                toast.show();
+            // ================= TOAST =================
+            function showToast(message, type = 'info') {
+                const container = document.getElementById('toastContainer');
+                const colors = {
+                    success: '#d4edda',
+                    danger: '#f8d7da',
+                    warning: '#fff3cd',
+                    info: '#d1ecf1'
+                };
+                const textColors = {
+                    success: '#155724',
+                    danger: '#721c24',
+                    warning: '#856404',
+                    info: '#0c5460'
+                };
+                const icons = {
+                    success: 'fa-check-circle',
+                    danger: 'fa-times-circle',
+                    warning: 'fa-exclamation-triangle',
+                    info: 'fa-info-circle'
+                };
+                const toast = document.createElement('div');
+                toast.className = `toast align-items-center border-0 show`;
+                toast.style.background = colors[type] || '#fff';
+                toast.style.borderLeft = `6px solid ${type === 'success' ? '#28a745' : type === 'danger' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#007bff'}`;
+                toast.style.borderRadius = '10px';
+                toast.style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)';
+                toast.style.padding = '0.75rem 1rem';
+                toast.style.marginBottom = '8px';
+                toast.style.minWidth = '280px';
+                toast.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="fas ${icons[type]} me-2" style="color:${textColors[type]};font-size:1.2rem;"></i>
+                        <div style="color:${textColors[type]};flex:1;">${message}</div>
+                        <button type="button" class="btn-close btn-sm" data-bs-dismiss="toast" style="font-size:0.7rem;"></button>
+                    </div>
+                `;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 4000);
+                toast.querySelector('.btn-close').addEventListener('click', () => {
+                    toast.remove();
+                });
             }
 
-            // -------------------- Auth Check --------------------
+            // ================= AUTH CHECK =================
             async function checkAdmin() {
                 const { data: { user } } = await supabase.auth.getUser();
-                if (!user) { window.location.href = "login.html"; return false; }
+                if (!user) {
+                    window.location.href = "login.html";
+                    return false;
+                }
                 currentUser = user;
-                const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("role")
+                    .eq("id", user.id)
+                    .single();
                 if (!profile || profile.role !== "admin") {
                     alert("Access denied. Admins only.");
                     window.location.href = "index.html";
@@ -168,254 +561,553 @@
                 return true;
             }
 
+            // ================= LOGOUT =================
             document.getElementById("logoutBtn").addEventListener("click", async () => {
                 await supabase.auth.signOut();
                 window.location.href = "index.html";
             });
 
-            // -------------------- Fetch Employees & Documents --------------------
-            async function fetchComplianceData() {
-                const { data: employees, error: empErr } = await supabase
-                    .from("employees")
-                    .select("id, full_name, id_passport_number, nationality, phone, address, job_position, employment_date, compliance_status")
-                    .order("full_name");
-                if (empErr) throw empErr;
+            // ================= LOAD DATA =================
+            async function loadAllData() {
+                try {
+                    // load employees
+                    const { data: employees, error: empErr } = await supabase
+                        .from("employees")
+                        .select("*")
+                        .order("full_name");
 
-                const employeeIds = employees.map(e => e.id);
-                const { data: docs, error: docErr } = await supabase
-                    .from("documents")
-                    .select("employee_id, expiry_date")
-                    .eq("doc_type", "SA_ID")
-                    .in("employee_id", employeeIds);
-                if (docErr) throw docErr;
+                    if (empErr) throw empErr;
+                    allEmployees = employees || [];
 
-                const expiryMap = {};
-                docs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
+                    // load documents
+                    const { data: docs, error: docErr } = await supabase
+                        .from("documents")
+                        .select("*")
+                        .order("upload_date", { ascending: false });
 
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                const thirtyDaysLater = new Date(today);
-                thirtyDaysLater.setDate(today.getDate() + 30);
+                    if (docErr) throw docErr;
+                    allDocuments = docs || [];
 
-                employees.forEach(emp => {
-                    const expiry = expiryMap[emp.id] || null;
-                    let autoStatus = 'missing';
-                    let expiryDisplay = 'Not uploaded';
-                    if (expiry) {
-                        expiryDisplay = new Date(expiry).toLocaleDateString();
-                        const expDate = new Date(expiry);
-                        expDate.setHours(0,0,0,0);
-                        if (expDate < today) autoStatus = 'expired';
-                        else if (expDate <= thirtyDaysLater) autoStatus = 'expiring';
-                        else autoStatus = 'valid';
+                    // load compliance overrides from profiles (or use local)
+                    // We'll store overrides in a local map for now, but in production use DB
+                    // Try to load from a 'compliance_status' column or use local cache
+                    // Since we can't add columns, we'll use a simple local cache with localStorage
+                    const stored = localStorage.getItem('complianceOverrides');
+                    if (stored) {
+                        try {
+                            complianceOverrides = JSON.parse(stored);
+                        } catch (e) { complianceOverrides = {}; }
                     }
-                    emp._expiry = expiry;
-                    emp._expiryDisplay = expiryDisplay;
-                    emp._autoStatus = autoStatus;
-                    emp._manualStatus = emp.compliance_status || null;
-                });
 
-                allEmployees = employees;
-                return employees;
+                    // Also try to load from DB if there's a compliance_status column
+                    // We'll just use local overrides for simplicity
+
+                    renderStats();
+                    renderEmployeeList();
+                    populateEmployeeSelect();
+
+                    // If there was a selected employee, re-select
+                    if (selectedEmployeeId) {
+                        const stillExists = allEmployees.some(e => e.id == selectedEmployeeId);
+                        if (stillExists) {
+                            selectEmployee(selectedEmployeeId);
+                        } else {
+                            selectedEmployeeId = null;
+                            document.getElementById('selectedEmployeeInfo').style.display = 'block';
+                            document.getElementById('selectedEmployeeActions').style.display = 'none';
+                        }
+                    }
+
+                } catch (err) {
+                    console.error("Load error:", err);
+                    showToast("Failed to load data: " + err.message, 'danger');
+                }
             }
 
-            // -------------------- Render Table --------------------
-            function renderTable(employees, filter = 'all') {
-                const tbody = document.getElementById('compliance-tbody');
-                let filtered = employees;
-                if (filter === 'valid') filtered = employees.filter(e => e._autoStatus === 'valid');
-                else if (filter === 'expiring') filtered = employees.filter(e => e._autoStatus === 'expiring');
-                else if (filter === 'expired') filtered = employees.filter(e => e._autoStatus === 'expired');
-                else if (filter === 'missing') filtered = employees.filter(e => e._autoStatus === 'missing');
-                else if (filter === 'compliant') filtered = employees.filter(e => e._manualStatus === 'compliant');
-                else if (filter === 'noncompliant') filtered = employees.filter(e => e._manualStatus === 'noncompliant');
+            // ================= COMPLIANCE CALC =================
+            function getComplianceStatus(employeeId) {
+                // Check override first
+                if (complianceOverrides[employeeId] !== undefined) {
+                    return complianceOverrides[employeeId];
+                }
+
+                const docs = allDocuments.filter(d => d.employee_id == employeeId);
+                if (docs.length === 0) return 'non-compliant';
+
+                let hasValid = false;
+                let allValid = true;
+                let hasExpired = false;
+                let hasBlurry = false;
+                let hasIncomplete = false;
+
+                for (const doc of docs) {
+                    // check expiry
+                    if (doc.expiry_date) {
+                        const exp = new Date(doc.expiry_date);
+                        const now = new Date();
+                        if (exp < now) {
+                            hasExpired = true;
+                            allValid = false;
+                            continue;
+                        }
+                    }
+                    if (doc.is_blurry) { hasBlurry = true;
+                        allValid = false; continue; }
+                    if (doc.is_incomplete) { hasIncomplete = true;
+                        allValid = false; continue; }
+                    hasValid = true;
+                }
+
+                if (!hasValid) return 'non-compliant';
+                if (allValid && !hasExpired && !hasBlurry && !hasIncomplete) return 'compliant';
+                if (hasValid && (hasExpired || hasBlurry || hasIncomplete)) return 'partial';
+                return 'non-compliant';
+            }
+
+            function getComplianceLabel(status) {
+                return {
+                    'compliant': '✅ Compliant',
+                    'non-compliant': '❌ Non-Compliant',
+                    'partial': '⚠️ Partial'
+                } [status] || 'Unknown';
+            }
+
+            function getComplianceBadgeClass(status) {
+                return {
+                    'compliant': 'compliant',
+                    'non-compliant': 'non-compliant',
+                    'partial': 'partial'
+                } [status] || '';
+            }
+
+            // ================= RENDER STATS =================
+            function renderStats() {
+                let total = allEmployees.length;
+                let compliant = 0,
+                    non = 0,
+                    partial = 0;
+                for (const emp of allEmployees) {
+                    const s = getComplianceStatus(emp.id);
+                    if (s === 'compliant') compliant++;
+                    else if (s === 'non-compliant') non++;
+                    else if (s === 'partial') partial++;
+                }
+                document.getElementById('totalEmployees').textContent = total;
+                document.getElementById('compliantCount').textContent = compliant;
+                document.getElementById('nonCompliantCount').textContent = non;
+                document.getElementById('partialCount').textContent = partial;
+                document.getElementById('employeeCountBadge').textContent = total + ' employees';
+            }
+
+            // ================= RENDER EMPLOYEE LIST =================
+            function renderEmployeeList() {
+                const container = document.getElementById('employeeList');
+                const searchVal = document.getElementById('searchEmployee').value.toLowerCase().trim();
+                const filterVal = document.getElementById('filterCompliance').value;
+
+                let filtered = allEmployees;
+
+                if (searchVal) {
+                    filtered = filtered.filter(e =>
+                        (e.full_name || '').toLowerCase().includes(searchVal) ||
+                        (e.department || '').toLowerCase().includes(searchVal) ||
+                        (e.position || '').toLowerCase().includes(searchVal)
+                    );
+                }
+
+                if (filterVal !== 'all') {
+                    filtered = filtered.filter(e => getComplianceStatus(e.id) === filterVal);
+                }
 
                 if (filtered.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No employees match this filter.</td></tr>`;
+                    container.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-search fa-2x d-block mb-2"></i>
+                            No employees match your filters.
+                        </div>
+                    `;
                     return;
                 }
 
-                tbody.innerHTML = filtered.map(emp => {
-                    let autoBadgeClass = 'bg-secondary';
-                    let autoStatusText = 'Missing';
-                    if (emp._autoStatus === 'valid') { autoBadgeClass = 'bg-success'; autoStatusText = 'Valid'; }
-                    else if (emp._autoStatus === 'expiring') { autoBadgeClass = 'bg-warning text-dark'; autoStatusText = 'Expiring Soon'; }
-                    else if (emp._autoStatus === 'expired') { autoBadgeClass = 'bg-danger'; autoStatusText = 'Expired'; }
+                let html = '';
+                for (const emp of filtered) {
+                    const status = getComplianceStatus(emp.id);
+                    const statusLabel = getComplianceLabel(status);
+                    const badgeClass = getComplianceBadgeClass(status);
+                    const isExpanded = expandedEmployeeId == emp.id;
+                    const docs = allDocuments.filter(d => d.employee_id == emp.id);
+                    const docCount = docs.length;
 
-                    let manualBadgeClass = 'bg-secondary';
-                    let manualStatusText = 'Not set';
-                    if (emp._manualStatus === 'compliant') { manualBadgeClass = 'bg-success'; manualStatusText = 'Compliant'; }
-                    else if (emp._manualStatus === 'noncompliant') { manualBadgeClass = 'bg-danger'; manualStatusText = 'Non‑Compliant'; }
-
-                    return `
-                        <tr data-id="${emp.id}">
-                            <td><strong>${emp.full_name}</strong></td>
-                            <td>${emp.id_passport_number}</td>
-                            <td>${emp.nationality}</td>
-                            <td>${emp._expiryDisplay}</td>
-                            <td><span class="badge ${autoBadgeClass} status-badge">${autoStatusText}</span></td>
-                            <td><span class="badge ${manualBadgeClass} status-badge manual-badge" data-id="${emp.id}">${manualStatusText}</span></td>
-                            <td>
-                                <div class="d-flex gap-1">
-                                    <select class="form-select form-select-sm compliance-select" data-id="${emp.id}">
-                                        <option value="">Auto</option>
-                                        <option value="compliant" ${emp._manualStatus === 'compliant' ? 'selected' : ''}>Compliant</option>
-                                        <option value="noncompliant" ${emp._manualStatus === 'noncompliant' ? 'selected' : ''}>Non‑Compliant</option>
-                                    </select>
-                                    <button class="btn btn-sm btn-warning edit-emp-btn" data-id="${emp.id}"><i class="fas fa-edit"></i></button>
+                    html += `
+                        <div class="employee-row" data-id="${emp.id}">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="chevron ${isExpanded ? 'open' : ''}" style="font-size:0.9rem;color:#6c757d;width:20px;text-align:center;">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </span>
+                                    <div>
+                                        <strong>${emp.full_name || 'Unnamed'}</strong>
+                                        <span class="badge bg-light text-dark fw-normal ms-1">${emp.department || 'N/A'}</span>
+                                        <span class="badge bg-light text-dark fw-normal ms-1">${emp.position || 'N/A'}</span>
+                                    </div>
                                 </div>
-                            </td>
-                        </tr>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="compliance-badge ${badgeClass}">${statusLabel}</span>
+                                    <span class="badge bg-light text-dark fw-normal">${docCount} doc${docCount !== 1 ? 's' : ''}</span>
+                                    <button class="btn btn-sm btn-outline-primary view-docs-btn" data-id="${emp.id}" title="View documents">
+                                        <i class="fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="employee-detail ${isExpanded ? 'open' : ''}">
+                                ${renderEmployeeDocs(emp.id)}
+                            </div>
+                        </div>
+                        <hr class="my-1" />
                     `;
-                }).join('');
+                }
 
-                // Attach events for compliance dropdown change
-                document.querySelectorAll('.compliance-select').forEach(select => {
-                    select.addEventListener('change', async function() {
-                        const empId = this.dataset.id;
-                        const newStatus = this.value; // '' or 'compliant' or 'noncompliant'
-                        try {
-                            const { error } = await supabase
-                                .from('employees')
-                                .update({ compliance_status: newStatus || null })
-                                .eq('id', empId);
-                            if (error) throw error;
+                container.innerHTML = html;
 
-                            // Update local data
-                            const emp = allEmployees.find(e => e.id == empId);
-                            if (emp) {
-                                emp._manualStatus = newStatus || null;
-                                emp.compliance_status = newStatus || null;
-                            }
-
-                            // Update the manual badge in the row
-                            const row = document.querySelector(`tr[data-id="${empId}"]`);
-                            if (row) {
-                                const badge = row.querySelector('.manual-badge');
-                                let badgeClass = 'bg-secondary';
-                                let statusText = 'Not set';
-                                if (newStatus === 'compliant') { badgeClass = 'bg-success'; statusText = 'Compliant'; }
-                                else if (newStatus === 'noncompliant') { badgeClass = 'bg-danger'; statusText = 'Non‑Compliant'; }
-                                badge.className = `badge ${badgeClass} status-badge manual-badge`;
-                                badge.textContent = statusText;
-                            }
-
-                            showToast('Compliance status updated successfully!');
-                        } catch (err) {
-                            alert('Failed to update compliance: ' + err.message);
-                            // Revert select to previous value
-                            this.value = allEmployees.find(e => e.id == empId)?._manualStatus || '';
-                        }
+                // Attach events
+                container.querySelectorAll('.employee-row').forEach(row => {
+                    const id = parseInt(row.dataset.id);
+                    // Click on row body toggles expand
+                    row.addEventListener('click', (e) => {
+                        // Ignore if clicked on a button inside
+                        if (e.target.closest('button')) return;
+                        toggleExpand(id);
+                    });
+                    // View docs button
+                    const btn = row.querySelector('.view-docs-btn');
+                    if (btn) {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            toggleExpand(id);
+                        });
+                    }
+                    // Select employee for right panel
+                    row.addEventListener('dblclick', () => {
+                        selectEmployee(id);
                     });
                 });
 
-                document.querySelectorAll('.edit-emp-btn').forEach(btn => {
-                    btn.addEventListener('click', () => openEditModal(btn.dataset.id));
+                // If there's a selected employee, highlight it
+                if (selectedEmployeeId) {
+                    const rows = container.querySelectorAll('.employee-row');
+                    rows.forEach(row => {
+                        if (parseInt(row.dataset.id) === selectedEmployeeId) {
+                            row.style.background = '#e7f1ff';
+                            row.style.borderRadius = '12px';
+                        }
+                    });
+                }
+            }
+
+            function renderEmployeeDocs(employeeId) {
+                const docs = allDocuments.filter(d => d.employee_id == employeeId);
+                if (docs.length === 0) {
+                    return `<div class="no-docs-msg"><i class="fas fa-file me-1"></i>No documents uploaded.</div>`;
+                }
+
+                const baseUrl = `${supabase.supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/`;
+
+                let html = `<div class="mt-2"><small class="text-muted fw-semibold">📄 Documents</small>`;
+                for (const doc of docs) {
+                    const isExpired = doc.expiry_date ? new Date(doc.expiry_date) < new Date() : false;
+                    const isBlurry = doc.is_blurry || false;
+                    const isIncomplete = doc.is_incomplete || false;
+                    let statusClass = 'valid';
+                    let statusText = '✅ Valid';
+                    if (isExpired) { statusClass = 'expired';
+                        statusText = '⏰ Expired'; } else if (isBlurry) { statusClass = 'warning';
+                        statusText = '📷 Blurry'; } else if (isIncomplete) { statusClass = 'warning';
+                        statusText = '📄 Incomplete'; }
+
+                    html += `
+                        <div class="doc-item ${statusClass}">
+                            <div class="doc-meta">
+                                <span class="badge-doc-type">${doc.doc_type}</span>
+                                <span class="small text-muted">${statusText}</span>
+                                ${doc.expiry_date ? `<span class="small text-muted">Exp: ${doc.expiry_date}</span>` : ''}
+                                <span class="small text-muted">${new Date(doc.upload_date).toLocaleDateString()}</span>
+                            </div>
+                            <div class="doc-actions">
+                                <a href="${baseUrl}${doc.file_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger delete-doc-btn" data-id="${doc.id}" data-employee="${employeeId}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+                return html;
+            }
+
+            // ================= TOGGLE EXPAND =================
+            function toggleExpand(employeeId) {
+                if (expandedEmployeeId === employeeId) {
+                    expandedEmployeeId = null;
+                } else {
+                    expandedEmployeeId = employeeId;
+                    // Also select this employee
+                    selectEmployee(employeeId);
+                }
+                renderEmployeeList();
+            }
+
+            // ================= SELECT EMPLOYEE (right panel) =================
+            function selectEmployee(employeeId) {
+                selectedEmployeeId = employeeId;
+                const emp = allEmployees.find(e => e.id == employeeId);
+                if (!emp) return;
+
+                const infoDiv = document.getElementById('selectedEmployeeInfo');
+                const actionsDiv = document.getElementById('selectedEmployeeActions');
+
+                const status = getComplianceStatus(emp.id);
+                const statusLabel = getComplianceLabel(status);
+                const badgeClass = getComplianceBadgeClass(status);
+
+                infoDiv.style.display = 'block';
+                infoDiv.innerHTML = `
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px;">
+                            <i class="fas fa-user fa-2x text-primary"></i>
+                        </div>
+                        <div class="text-start">
+                            <h6 class="mb-0">${emp.full_name || 'Unnamed'}</h6>
+                            <small class="text-muted">${emp.department || 'N/A'} · ${emp.position || 'N/A'}</small>
+                            <div><span class="compliance-badge ${badgeClass} mt-1 d-inline-block">${statusLabel}</span></div>
+                        </div>
+                    </div>
+                `;
+                actionsDiv.style.display = 'flex';
+                actionsDiv.style.justifyContent = 'center';
+
+                // Update upload form
+                document.getElementById('doc-employee-select').value = employeeId;
+                document.getElementById('doc-employee-id').value = employeeId;
+
+                // Highlight in list
+                renderEmployeeList();
+                // Re-highlight
+                const rows = document.querySelectorAll('.employee-row');
+                rows.forEach(row => {
+                    row.style.background = '';
+                    if (parseInt(row.dataset.id) === employeeId) {
+                        row.style.background = '#e7f1ff';
+                        row.style.borderRadius = '12px';
+                    }
+                });
+
+                // Store selected in localStorage for refresh
+                localStorage.setItem('selectedEmployeeId', employeeId);
+            }
+
+            // ================= POPULATE EMPLOYEE SELECT (upload form) =================
+            function populateEmployeeSelect() {
+                const select = document.getElementById('doc-employee-select');
+                const currentVal = select.value;
+                select.innerHTML = `<option value="">-- Choose employee --</option>`;
+                for (const emp of allEmployees) {
+                    const opt = document.createElement('option');
+                    opt.value = emp.id;
+                    opt.textContent = emp.full_name || 'Unnamed';
+                    select.appendChild(opt);
+                }
+                if (currentVal && allEmployees.some(e => e.id == currentVal)) {
+                    select.value = currentVal;
+                }
+                select.addEventListener('change', () => {
+                    const id = select.value;
+                    document.getElementById('doc-employee-id').value = id;
+                    if (id) selectEmployee(parseInt(id));
                 });
             }
 
-            // -------------------- Filter Change --------------------
-            document.getElementById('filter-status').addEventListener('change', function() {
-                renderTable(allEmployees, this.value);
-            });
+            // ================= DELETE DOCUMENT =================
+            async function deleteDocument(docId, employeeId) {
+                if (!confirm("Delete this document?")) return;
 
-            // -------------------- Edit Modal --------------------
-            function openEditModal(empId) {
-                const emp = allEmployees.find(e => e.id == empId);
-                if (!emp) return;
-                document.getElementById('edit-emp-id').value = emp.id;
-                document.getElementById('edit-full-name').value = emp.full_name;
-                document.getElementById('edit-id-number').value = emp.id_passport_number;
-                document.getElementById('edit-nationality').value = emp.nationality;
-                document.getElementById('edit-phone').value = emp.phone || '';
-                document.getElementById('edit-address').value = emp.address || '';
-                document.getElementById('edit-position').value = emp.job_position || '';
-                document.getElementById('edit-emp-date').value = emp.employment_date ? emp.employment_date.split('T')[0] : '';
-                document.getElementById('edit-compliance-status').value = emp._manualStatus || '';
-                new bootstrap.Modal(document.getElementById('editEmployeeModal')).show();
-            }
-
-            document.getElementById('edit-employee-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const id = document.getElementById('edit-emp-id').value;
-                const newManualStatus = document.getElementById('edit-compliance-status').value;
-                const payload = {
-                    full_name: document.getElementById('edit-full-name').value.trim(),
-                    id_passport_number: document.getElementById('edit-id-number').value.trim(),
-                    nationality: document.getElementById('edit-nationality').value.trim(),
-                    phone: document.getElementById('edit-phone').value.trim(),
-                    address: document.getElementById('edit-address').value.trim(),
-                    job_position: document.getElementById('edit-position').value.trim(),
-                    employment_date: document.getElementById('edit-emp-date').value,
-                    compliance_status: newManualStatus || null
-                };
                 try {
-                    const { error } = await supabase.from('employees').update(payload).eq('id', id);
-                    if (error) throw error;
+                    const { data } = await supabase
+                        .from("documents")
+                        .select("file_path")
+                        .eq("id", docId)
+                        .single();
 
-                    const emp = allEmployees.find(e => e.id == id);
-                    if (emp) {
-                        Object.assign(emp, payload);
-                        emp._manualStatus = newManualStatus || null;
+                    if (data?.file_path) {
+                        await supabase.storage.from(STORAGE_BUCKET).remove([data.file_path]);
                     }
 
-                    bootstrap.Modal.getInstance(document.getElementById('editEmployeeModal')).hide();
-                    renderTable(allEmployees, document.getElementById('filter-status').value);
-                    showToast('Employee updated successfully!');
+                    const { error } = await supabase
+                        .from("documents")
+                        .delete()
+                        .eq("id", docId);
+
+                    if (error) throw error;
+
+                    showToast("Document deleted successfully", 'success');
+                    await loadAllData();
+                    if (employeeId) selectEmployee(employeeId);
+
                 } catch (err) {
-                    alert('Update failed: ' + err.message);
+                    showToast("Delete failed: " + err.message, 'danger');
                 }
-            });
+            }
 
-            // -------------------- Generate Report --------------------
-            document.getElementById('generate-compliance-report').addEventListener('click', function() {
-                const filter = document.getElementById('filter-status').value;
-                let filtered = allEmployees;
-                if (filter === 'valid') filtered = allEmployees.filter(e => e._autoStatus === 'valid');
-                else if (filter === 'expiring') filtered = allEmployees.filter(e => e._autoStatus === 'expiring');
-                else if (filter === 'expired') filtered = allEmployees.filter(e => e._autoStatus === 'expired');
-                else if (filter === 'missing') filtered = allEmployees.filter(e => e._autoStatus === 'missing');
-                else if (filter === 'compliant') filtered = allEmployees.filter(e => e._manualStatus === 'compliant');
-                else if (filter === 'noncompliant') filtered = allEmployees.filter(e => e._manualStatus === 'noncompliant');
+            // ================= UPLOAD DOCUMENT =================
+            document.getElementById("upload-doc-form").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const btn = e.target.querySelector("button[type=submit]");
+                btn.disabled = true;
 
-                let reportText = 'Compliance Report - ' + new Date().toLocaleString() + '\n\n';
-                reportText += 'Employee | ID | Nationality | SA ID Expiry | Auto Status | Manual Status\n';
-                reportText += '--------------------------------------------------------------------------------\n';
-                filtered.forEach(emp => {
-                    const expiryDisplay = emp._expiry ? new Date(emp._expiry).toLocaleDateString() : 'Not uploaded';
-                    const manual = emp._manualStatus || 'Not set';
-                    reportText += `${emp.full_name} | ${emp.id_passport_number} | ${emp.nationality} | ${expiryDisplay} | ${emp._autoStatus} | ${manual}\n`;
-                });
-                const win = window.open('', '_blank');
-                win.document.write('<pre>' + reportText + '</pre>');
-                win.document.write('<button onclick="window.print()">Print</button>');
-                win.document.close();
-            });
+                const formData = new FormData(e.target);
+                const employeeId = document.getElementById("doc-employee-id").value;
+                const file = formData.get("document");
+                const docType = formData.get("doc_type");
+                const expiryDate = formData.get("expiry_date") || null;
+                const feedback = document.getElementById("upload-feedback");
 
-            // -------------------- Load All --------------------
-            async function loadCompliance() {
+                if (!employeeId || !file) {
+                    feedback.innerHTML = `<div class="alert alert-warning py-1 small">Select employee and file.</div>`;
+                    btn.disabled = false;
+                    return;
+                }
+
+                if (file.size > 10 * 1024 * 1024) {
+                    feedback.innerHTML = `<div class="alert alert-danger py-1 small">File too large (max 10MB).</div>`;
+                    btn.disabled = false;
+                    return;
+                }
+
+                const ext = file.name.split(".").pop() || "file";
+                const filePath = `${employeeId}/${docType}_${Date.now()}.${ext}`;
+
+                feedback.innerHTML = `<div class="alert alert-info py-1 small"><i class="fas fa-spinner fa-spin me-1"></i>Uploading...</div>`;
+
                 try {
-                    await fetchComplianceData();
-                    renderTable(allEmployees, document.getElementById('filter-status').value);
+                    const { error: uploadError } = await supabase.storage
+                        .from(STORAGE_BUCKET)
+                        .upload(filePath, file);
+
+                    if (uploadError) throw uploadError;
+
+                    const { error: dbError } = await supabase
+                        .from("documents")
+                        .insert([{
+                            employee_id: Number(employeeId),
+                            doc_type: docType,
+                            file_path: filePath,
+                            expiry_date: expiryDate,
+                            uploaded_by: currentUser.id,
+                            upload_date: new Date().toISOString(),
+                            is_blurry: false,
+                            is_incomplete: false
+                        }]);
+
+                    if (dbError) {
+                        await supabase.storage.from(STORAGE_BUCKET).remove([filePath]);
+                        throw dbError;
+                    }
+
+                    feedback.innerHTML = `<div class="alert alert-success py-1 small">✅ Upload successful!</div>`;
+                    showToast("Document uploaded successfully", 'success');
+                    e.target.reset();
+                    document.getElementById('fileNameDisplay').textContent = '';
+                    await loadAllData();
+                    if (employeeId) selectEmployee(Number(employeeId));
+
                 } catch (err) {
                     console.error(err);
-                    document.getElementById('compliance-tbody').innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error loading data: ${err.message}</td></tr>`;
+                    feedback.innerHTML = `<div class="alert alert-danger py-1 small">${err.message}</div>`;
+                    showToast("Upload failed: " + err.message, 'danger');
+                }
+
+                btn.disabled = false;
+            });
+
+            // File name display
+            document.getElementById('docFileInput').addEventListener('change', function() {
+                const display = document.getElementById('fileNameDisplay');
+                if (this.files && this.files[0]) {
+                    display.textContent = `📎 ${this.files[0].name} (${(this.files[0].size / 1024).toFixed(1)} KB)`;
+                } else {
+                    display.textContent = '';
+                }
+            });
+
+            // ================= COMPLIANCE TOGGLE (manual override) =================
+            document.getElementById('markCompliantBtn').addEventListener('click', () => {
+                if (!selectedEmployeeId) return;
+                setComplianceOverride(selectedEmployeeId, 'compliant');
+            });
+
+            document.getElementById('markNonCompliantBtn').addEventListener('click', () => {
+                if (!selectedEmployeeId) return;
+                setComplianceOverride(selectedEmployeeId, 'non-compliant');
+            });
+
+            function setComplianceOverride(employeeId, status) {
+                complianceOverrides[employeeId] = status;
+                localStorage.setItem('complianceOverrides', JSON.stringify(complianceOverrides));
+                showToast(`Employee marked as ${status}`, status === 'compliant' ? 'success' : 'warning');
+                renderStats();
+                renderEmployeeList();
+                if (selectedEmployeeId) selectEmployee(selectedEmployeeId);
+            }
+
+            // ================= FILTERS =================
+            document.getElementById('searchEmployee').addEventListener('input', renderEmployeeList);
+            document.getElementById('filterCompliance').addEventListener('change', renderEmployeeList);
+            document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+                document.getElementById('searchEmployee').value = '';
+                document.getElementById('filterCompliance').value = 'all';
+                renderEmployeeList();
+            });
+
+            // ================= REFRESH =================
+            document.getElementById('refreshBtn').addEventListener('click', async () => {
+                showToast("Refreshing data...", 'info');
+                await loadAllData();
+                if (selectedEmployeeId) selectEmployee(selectedEmployeeId);
+                showToast("Data refreshed", 'success');
+            });
+
+            // ================= DELETE DOCUMENT EVENTS (delegated) =================
+            document.getElementById('employeeList').addEventListener('click', async (e) => {
+                const btn = e.target.closest('.delete-doc-btn');
+                if (btn) {
+                    const docId = btn.dataset.id;
+                    const empId = btn.dataset.employee;
+                    await deleteDocument(docId, empId);
+                }
+            });
+
+            // ================= INIT =================
+            if (await checkAdmin()) {
+                // Restore selected employee from localStorage
+                const saved = localStorage.getItem('selectedEmployeeId');
+                if (saved) selectedEmployeeId = parseInt(saved);
+
+                await loadAllData();
+
+                if (selectedEmployeeId) {
+                    const exists = allEmployees.some(e => e.id == selectedEmployeeId);
+                    if (exists) selectEmployee(selectedEmployeeId);
+                }
+
+                // If no selection, select first employee
+                if (!selectedEmployeeId && allEmployees.length > 0) {
+                    selectEmployee(allEmployees[0].id);
                 }
             }
 
-            // -------------------- Init --------------------
-            if (await checkAdmin()) {
-                await loadCompliance();
-            }
         })();
     </script>
-
-    <!-- Database column reminder -->
-    <div style="display:none;">
-        <!-- 
-            IMPORTANT: Add 'compliance_status' TEXT column to 'employees' table.
-            Run: ALTER TABLE employees ADD COLUMN compliance_status TEXT;
-        -->
-    </div>
 </body>
 </html>
