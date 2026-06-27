@@ -9,14 +9,85 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #f8f9fa; }
-        .stat-card { border-radius: 10px; padding: 15px; color: #fff; }
-        .stat-card.primary { background: linear-gradient(135deg, #4e73df, #224abe); }
-        .stat-card.success { background: linear-gradient(135deg, #1cc88a, #13855c); }
-        .stat-card.warning { background: linear-gradient(135deg, #f6c23e, #dda20a); }
-        .stat-card.danger { background: linear-gradient(135deg, #e74a3b, #be2617); }
-        .card-header { font-weight: 600; }
-        .other-input { display: none; margin-top: 5px; }
+        body {
+            background: #f8f9fa;
+        }
+        .stat-card {
+            border-radius: 10px;
+            padding: 15px;
+            color: #fff;
+        }
+        .stat-card.primary {
+            background: linear-gradient(135deg, #4e73df, #224abe);
+        }
+        .stat-card.success {
+            background: linear-gradient(135deg, #1cc88a, #13855c);
+        }
+        .stat-card.warning {
+            background: linear-gradient(135deg, #f6c23e, #dda20a);
+        }
+        .stat-card.danger {
+            background: linear-gradient(135deg, #e74a3b, #be2617);
+        }
+        .card-header {
+            font-weight: 600;
+        }
+        .other-input {
+            display: none;
+            margin-top: 5px;
+        }
+        .alert-item {
+            border-left: 4px solid;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .alert-item.danger { border-left-color: #e74a3b; }
+        .alert-item.warning { border-left-color: #f6c23e; }
+        .alert-item.info { border-left-color: #4e73df; }
+        .alert-item.success { border-left-color: #1cc88a; }
+        .alert-item .icon {
+            font-size: 1.2rem;
+            width: 28px;
+            text-align: center;
+        }
+        .alert-item .msg {
+            flex: 1;
+            font-size: 0.95rem;
+        }
+        .alert-item .msg strong {
+            color: #1e3c72;
+        }
+        .alert-item .badge-severity {
+            font-size: 0.7rem;
+            padding: 2px 10px;
+            border-radius: 50px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .alert-item .badge-severity.danger { background: #fce4e4; color: #a52a2a; }
+        .alert-item .badge-severity.warning { background: #fff3cd; color: #856404; }
+        .alert-item .badge-severity.info { background: #d1ecf1; color: #0c5460; }
+        .alert-item .badge-severity.success { background: #d4edda; color: #155724; }
+        .alerts-scroll {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .alerts-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .alerts-scroll::-webkit-scrollbar-thumb {
+            background: #ced4da;
+            border-radius: 10px;
+        }
+        .alerts-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
     </style>
 </head>
 <body>
@@ -33,7 +104,6 @@
                     <li class="nav-item"><a class="nav-link active" href="dashboard.html">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="employees.html">Employees</a></li>
                     <li class="nav-item"><a class="nav-link" href="documents.html">Compliance</a></li>
-                    <li class="nav-item"><a class="nav-link" href="reports.html"></a></li>
                 </ul>
                 <button class="btn btn-outline-danger btn-sm ms-lg-3" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
@@ -119,7 +189,6 @@
                                     <option value="closed">Closed</option>
                                 </select>
                             </div>
-                            <!-- Requirements Dropdown (adds to description) -->
                             <div class="col-12">
                                 <label>Quick Requirements</label>
                                 <select id="edit-requirements-select" class="form-select" onchange="addRequirement(this, 'edit-job-description')">
@@ -152,23 +221,21 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Helper: add requirement text to textarea
+        // Helper functions
         function addRequirement(select, textareaId) {
             const textarea = document.getElementById(textareaId);
             const value = select.value;
             if (value) {
-                // Append with newline if existing content
                 const current = textarea.value.trim();
                 if (current) {
                     textarea.value = current + "\n• " + value;
                 } else {
                     textarea.value = "• " + value;
                 }
-                select.value = ''; // reset after adding
+                select.value = '';
             }
         }
 
-        // Helper: toggle "Other" text input
         function toggleOther(select, inputId) {
             const input = document.getElementById(inputId);
             if (select.value === 'Other') {
@@ -181,7 +248,6 @@
             }
         }
 
-        // Helper: get value from select + optional other
         function getFieldValue(selectId, otherId) {
             const select = document.getElementById(selectId);
             if (select.value === 'Other') {
@@ -190,7 +256,6 @@
             return select.value;
         }
 
-        // Helper: set select and other from existing value
         function setSelectAndOther(selectId, otherId, value) {
             const select = document.getElementById(selectId);
             const other = document.getElementById(otherId);
@@ -215,7 +280,7 @@
             }
         }
 
-        (async function () {
+        (async function() {
 
             const supabase = window.supabase.createClient(
                 "https://rlfywkvyjoydpbvprtdt.supabase.co",
@@ -225,7 +290,7 @@
 
             const container = document.getElementById('dashboard-content');
 
-            // ---------- Helpers for expired permits (not used for high-risk anymore) ----------
+            // ---------- Helpers ----------
             async function getExpiredPermits(employeeId) {
                 try {
                     const today = new Date().toISOString().split('T')[0];
@@ -274,13 +339,13 @@
                                 <div class="stat-card primary"><h5><i class="fas fa-users me-2"></i>Total Employees</h5><h2 id="total-employees">0</h2></div>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card success"><h5><i class="fas fa-check-circle me-2"></i>Compliant (Valid Passport)</h5><h2 id="compliant-count">0</h2></div>
+                                <div class="stat-card success"><h5><i class="fas fa-passport me-2"></i>Valid Passport</h5><h2 id="valid-passport-count">0</h2></div>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card warning"><h5><i class="fas fa-clock me-2"></i>Expired Permits</h5><h2 id="expired-count">0</h2></div>
+                                <div class="stat-card warning"><h5><i class="fas fa-clock me-2"></i>Expired Permits</h5><h2 id="expired-permits-count">0</h2></div>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card danger"><h5><i class="fas fa-exclamation-triangle me-2"></i>High Risk (Expired Passport)</h5><h2 id="highrisk-count">0</h2></div>
+                                <div class="stat-card danger"><h5><i class="fas fa-exclamation-triangle me-2"></i>Expired Passport</h5><h2 id="expired-passport-count">0</h2></div>
                             </div>
                         </div>
 
@@ -289,7 +354,7 @@
                             <div class="col-12">
                                 <div class="card">
                                     <div class="card-header bg-danger text-white">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>High‑Risk Employees (Expired  Passport)
+                                        <i class="fas fa-exclamation-triangle me-2"></i>High‑Risk Employees (Expired Passport)
                                         <span class="badge bg-light text-dark ms-2" id="highrisk-badge">0</span>
                                     </div>
                                     <div class="card-body p-0">
@@ -308,14 +373,14 @@
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="card h-100">
-                                    <div class="card-header">Compliance Overview</div>
+                                    <div class="card-header">Passport Compliance Overview</div>
                                     <div class="card-body"><canvas id="complianceChart" height="200"></canvas></div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card h-100">
-                                    <div class="card-header">Active Alerts</div>
-                                    <div class="card-body" id="alerts-list" style="max-height:250px;overflow-y:auto;">
+                                    <div class="card-header"><i class="fas fa-bell me-2"></i>Active Alerts</div>
+                                    <div class="card-body alerts-scroll" id="alerts-list">
                                         <p class="text-muted">Loading alerts...</p>
                                     </div>
                                 </div>
@@ -413,7 +478,6 @@
                                                         <option value="closed">Closed</option>
                                                     </select>
                                                 </div>
-                                                <!-- Requirements Dropdown -->
                                                 <div class="col-12">
                                                     <label class="form-label fw-semibold">Quick Requirements</label>
                                                     <select id="requirements-select" class="form-select" onchange="addRequirement(this, 'job-description')">
@@ -490,7 +554,7 @@
                 }
             }
 
-            // ---------- Stats + High‑Risk based on SA ID expiry ----------
+            // ---------- Stats + High‑Risk based on Passport expiry ----------
             let complianceChart = null;
             async function loadStatsAndHighRisk() {
                 try {
@@ -500,23 +564,26 @@
                     if (error) throw new Error('Failed to fetch employees: ' + error.message);
 
                     const empIds = employees.map(e => e.id);
-                    const { data: saDocs, error: saErr } = await supabase
+                    // Fetch PASSPORT documents
+                    const { data: passportDocs, error: docErr } = await supabase
                         .from('documents')
                         .select('employee_id, expiry_date')
-                        .eq('doc_type', 'SA_ID')
+                        .eq('doc_type', 'PASSPORT')
                         .in('employee_id', empIds);
-                    if (saErr) throw saErr;
+                    if (docErr) throw docErr;
 
                     const expiryMap = {};
-                    saDocs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
+                    passportDocs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
 
                     const today = new Date();
-                    today.setHours(0,0,0,0);
+                    today.setHours(0, 0, 0, 0);
+                    const thirtyDaysLater = new Date(today);
+                    thirtyDaysLater.setDate(today.getDate() + 30);
 
                     let total = employees.length;
-                    let compliant = 0;
-                    let expiredSA = 0;
-                    let missingSA = 0;
+                    let validPassport = 0;
+                    let expiredPassport = 0;
+                    let missingPassport = 0;
                     let highRiskEmployees = [];
                     let expiredPermitsCount = 0;
 
@@ -527,30 +594,32 @@
                         const expiry = expiryMap[emp.id] || null;
                         if (expiry) {
                             const expDate = new Date(expiry);
-                            expDate.setHours(0,0,0,0);
+                            expDate.setHours(0, 0, 0, 0);
                             if (expDate < today) {
-                                expiredSA++;
+                                expiredPassport++;
                                 highRiskEmployees.push({
                                     ...emp,
-                                    riskFactor: 'SA ID expired on ' + expDate.toLocaleDateString()
+                                    riskFactor: 'Passport expired on ' + expDate.toLocaleDateString()
                                 });
+                            } else if (expDate <= thirtyDaysLater) {
+                                validPassport++; // still valid but expiring soon
                             } else {
-                                compliant++;
+                                validPassport++;
                             }
                         } else {
-                            missingSA++;
+                            missingPassport++;
                         }
                     }
 
                     document.getElementById('total-employees').textContent = total;
-                    document.getElementById('compliant-count').textContent = compliant;
-                    document.getElementById('expired-count').textContent = expiredPermitsCount;
-                    document.getElementById('highrisk-count').textContent = expiredSA;
-                    document.getElementById('highrisk-badge').textContent = expiredSA;
+                    document.getElementById('valid-passport-count').textContent = validPassport;
+                    document.getElementById('expired-permits-count').textContent = expiredPermitsCount;
+                    document.getElementById('expired-passport-count').textContent = expiredPassport;
+                    document.getElementById('highrisk-badge').textContent = expiredPassport;
 
                     const riskTbody = document.getElementById('highrisk-tbody');
                     if (highRiskEmployees.length === 0) {
-                        riskTbody.innerHTML = '<tr><td colspan="4" class="text-center text-success">✅ No employees with expired SA ID.</td></tr>';
+                        riskTbody.innerHTML = '<tr><td colspan="4" class="text-center text-success">✅ No employees with expired passports.</td></tr>';
                     } else {
                         riskTbody.innerHTML = highRiskEmployees.map(emp => `
                             <tr>
@@ -562,57 +631,98 @@
                         `).join('');
                     }
 
+                    // Chart – now using Passport labels
                     const ctx = document.getElementById('complianceChart').getContext('2d');
                     if (complianceChart) complianceChart.destroy();
                     complianceChart = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
-                            labels: ['Valid SA ID', 'Expired SA ID', 'Missing SA ID', 'Expired Permits (info)'],
+                            labels: ['Valid Passport', 'Expired Passport', 'Missing Passport', 'Expired Permits (info)'],
                             datasets: [{
-                                data: [compliant, expiredSA, missingSA, expiredPermitsCount],
+                                data: [validPassport, expiredPassport, missingPassport, expiredPermitsCount],
                                 backgroundColor: ['#1cc88a', '#e74a3b', '#fd7e14', '#f6c23e']
                             }]
                         },
                         options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
                     });
-                    console.log('✅ Stats & high‑risk loaded');
+                    console.log('✅ Stats & high‑risk loaded (passport-based)');
 
-                    await loadAlerts();
+                    // Generate alerts
+                    await generateAlerts(employees, expiryMap, today, thirtyDaysLater);
+
                 } catch (err) {
                     console.error('Stats error:', err);
                     document.getElementById('alerts-list').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
                 }
             }
 
-            async function loadAlerts() {
+            // ---------- Generate dynamic alerts (Passport-focused) ----------
+            async function generateAlerts(employees, expiryMap, today, thirtyDaysLater) {
                 const container = document.getElementById('alerts-list');
-                try {
-                    const { data: alerts, error } = await supabase
-                        .from('alerts')
-                        .select('id, employee_id, description')
-                        .eq('resolved', false)
-                        .order('created_at', { ascending: false })
-                        .limit(10);
-                    if (error) throw error;
-                    if (!alerts || alerts.length === 0) {
-                        container.innerHTML = '<p class="text-success"><i class="fas fa-check-circle me-1"></i> No active alerts</p>';
-                        return;
+                let alerts = [];
+
+                for (const emp of employees) {
+                    const expiry = expiryMap[emp.id] || null;
+                    if (expiry) {
+                        const expDate = new Date(expiry);
+                        expDate.setHours(0, 0, 0, 0);
+                        if (expDate < today) {
+                            alerts.push({
+                                severity: 'danger',
+                                icon: 'fa-exclamation-circle',
+                                msg: `<strong>${emp.full_name}</strong> – Passport expired on ${expDate.toLocaleDateString()}. Please renew immediately.`,
+                                badge: 'Expired'
+                            });
+                        } else if (expDate <= thirtyDaysLater) {
+                            alerts.push({
+                                severity: 'warning',
+                                icon: 'fa-clock',
+                                msg: `<strong>${emp.full_name}</strong> – Passport expires on ${expDate.toLocaleDateString()} (within 30 days). Please renew soon.`,
+                                badge: 'Expiring'
+                            });
+                        }
+                    } else {
+                        alerts.push({
+                            severity: 'info',
+                            icon: 'fa-info-circle',
+                            msg: `<strong>${emp.full_name}</strong> – No passport document uploaded. Please upload a valid passport.`,
+                            badge: 'Missing'
+                        });
                     }
-                    const enriched = await Promise.all(alerts.map(async (a) => {
-                        const { data: emp } = await supabase.from('employees').select('full_name').eq('id', a.employee_id).single();
-                        return { ...a, employee_name: emp ? emp.full_name : 'Unknown' };
-                    }));
-                    container.innerHTML = enriched.map(a => `
-                        <div class="alert alert-warning py-2 mb-1">
-                            <i class="fas fa-exclamation-triangle me-1"></i>
-                            <strong>${a.employee_name}</strong>: ${a.description}
-                        </div>
-                    `).join('');
-                } catch (err) {
-                    container.innerHTML = `<p class="text-muted">Could not load alerts: ${err.message}</p>`;
+
+                    // Check for expired permits
+                    const expiredPermits = await getExpiredPermits(emp.id);
+                    if (expiredPermits.length > 0) {
+                        const types = expiredPermits.map(p => p.doc_type).join(', ');
+                        alerts.push({
+                            severity: 'danger',
+                            icon: 'fa-file-contract',
+                            msg: `<strong>${emp.full_name}</strong> – Expired permit(s): ${types}. Please renew immediately.`,
+                            badge: 'Expired Permit'
+                        });
+                    }
                 }
+
+                // Sort: danger first, then warning, then info
+                const order = { danger: 0, warning: 1, info: 2 };
+                alerts.sort((a, b) => order[a.severity] - order[b.severity]);
+                const topAlerts = alerts.slice(0, 10);
+
+                if (topAlerts.length === 0) {
+                    container.innerHTML = '<p class="text-success"><i class="fas fa-check-circle me-1"></i> No active alerts – all compliance looks good!</p>';
+                    return;
+                }
+
+                container.innerHTML = topAlerts.map(a => `
+                    <div class="alert-item ${a.severity}">
+                        <span class="icon"><i class="fas ${a.icon}"></i></span>
+                        <span class="msg">${a.msg}</span>
+                        <span class="badge-severity ${a.severity}">${a.badge}</span>
+                    </div>
+                `).join('');
             }
 
+            // ---------- Recent Employees ----------
             async function loadRecentEmployees() {
                 const tbody = document.getElementById('recent-employees-tbody');
                 try {
@@ -640,7 +750,7 @@
                 }
             }
 
-            // ---------- Job Posting (with requirements dropdown) ----------
+            // ---------- Job functions (unchanged) ----------
             async function handleJobPost(e) {
                 e.preventDefault();
                 const title = getFieldValue('job-title-select', 'job-title-other') || document.getElementById('job-title-other').value.trim();
@@ -684,7 +794,6 @@
                 }
             }
 
-            // ---------- Load Jobs Table ----------
             async function loadJobsTable() {
                 const tbody = document.getElementById('jobs-table-body');
                 const countBadge = document.getElementById('job-count');
@@ -722,7 +831,6 @@
                 }
             }
 
-            // ---------- Edit / Delete ----------
             async function openEditJobModal(jobId) {
                 try {
                     const { data: job, error } = await supabase
@@ -738,7 +846,6 @@
                     setSelectAndOther('edit-job-salary-select', 'edit-job-salary-other', job.salary || '');
                     document.getElementById('edit-job-status').value = job.status;
                     document.getElementById('edit-job-description').value = job.description || '';
-                    // Reset requirements dropdown
                     document.getElementById('edit-requirements-select').value = '';
                     new bootstrap.Modal(document.getElementById('jobEditModal')).show();
                 } catch (err) {
