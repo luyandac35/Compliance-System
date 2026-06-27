@@ -9,9 +9,8 @@
     <link rel="stylesheet" href="/css/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            background: #f8f9fa;
-        }
+        body { background: #f8f9fa; }
+        .status-badge { font-size: 0.8rem; padding: 0.3rem 0.6rem; }
     </style>
 </head>
 <body>
@@ -25,10 +24,10 @@
             </button>
             <div class="collapse navbar-collapse" id="nav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.html"></a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
                     <li class="nav-item"><a class="nav-link active" href="dashboard.html">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="employees.html">Employees</a></li>
-                    <li class="nav-item"><a class="nav-link" href="documents.html">Documents</a></li>
+                    <li class="nav-item"><a class="nav-link" href="documents.html">Compliance</a></li>
                     <li class="nav-item"><a class="nav-link" href="reports.html">Reports</a></li>
                 </ul>
                 <button class="btn btn-outline-danger btn-sm ms-lg-3" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -52,7 +51,15 @@
                 <div class="table-responsive">
                     <table class="table table-hover" id="employees-table">
                         <thead>
-                            <tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Position</th><th>Actions</th></tr>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID/Passport</th>
+                                <th>Nationality</th>
+                                <th>Position</th>
+                                <th>SA ID Expiry</th>
+                                <th>Compliance Status</th>
+                                <th>Actions</th>
+                            </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
@@ -63,7 +70,7 @@
 
     <!-- Employee Modal -->
     <div class="modal fade" id="employeeModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Add/Edit Employee</h5>
@@ -74,11 +81,50 @@
                         <input type="hidden" id="emp-id" />
                         <div class="mb-2"><label>Full Name</label><input type="text" id="full-name" class="form-control" required /></div>
                         <div class="mb-2"><label>ID/Passport Number</label><input type="text" id="id-number" class="form-control" required /></div>
-                        <div class="mb-2"><label>Nationality</label><input type="text" id="nationality" class="form-control" required /></div>
+                        <div class="mb-2">
+                            <label>Nationality</label>
+                            <select id="nationality" class="form-select" required>
+                                <option value="">Select nationality</option>
+                                <option value="South Africa">South Africa</option>
+                                <option value="Zimbabwe">Zimbabwe</option>
+                                <option value="Mozambique">Mozambique</option>
+                                <option value="Lesotho">Lesotho</option>
+                                <option value="Botswana">Botswana</option>
+                                <option value="Namibia">Namibia</option>
+                                <option value="Eswatini">Eswatini</option>
+                                <option value="Malawi">Malawi</option>
+                                <option value="Zambia">Zambia</option>
+                                <option value="United Kingdom">United Kingdom</option>
+                                <option value="United States">United States</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                         <div class="mb-2"><label>Phone</label><input type="text" id="phone" class="form-control" required /></div>
                         <div class="mb-2"><label>Address</label><textarea id="address" class="form-control" rows="2"></textarea></div>
-                        <div class="mb-2"><label>Job Position</label><input type="text" id="position" class="form-control" required /></div>
+                        <div class="mb-2">
+                            <label>Job Position</label>
+                            <select id="position" class="form-select" required>
+                                <option value="">Select position</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Senior Developer">Senior Developer</option>
+                                <option value="Developer">Developer</option>
+                                <option value="Junior Developer">Junior Developer</option>
+                                <option value="Designer">Designer</option>
+                                <option value="HR Coordinator">HR Coordinator</option>
+                                <option value="Accountant">Accountant</option>
+                                <option value="Administrator">Administrator</option>
+                                <option value="Intern">Intern</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                         <div class="mb-2"><label>Employment Date</label><input type="date" id="emp-date" class="form-control" required /></div>
+                        <hr />
+                        <h6><i class="fas fa-id-card text-primary"></i> SA ID Compliance</h6>
+                        <div class="mb-2">
+                            <label>SA ID Expiry Date (if applicable)</label>
+                            <input type="date" id="sa-id-expiry" class="form-control" />
+                            <small class="text-muted">Leave blank if not applicable or not uploaded.</small>
+                        </div>
                         <button type="submit" class="btn btn-primary w-100">Save Employee</button>
                     </form>
                 </div>
@@ -88,7 +134,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // ---------- Supabase Client (scoped) ----------
         (async function () {
 
             const supabase = window.supabase.createClient(
@@ -98,13 +143,14 @@
 
             console.log('✅ Supabase client ready');
 
+            let currentUser = null;
+            let allEmployees = [];
+
             // ---------- Auth & Admin Check ----------
             async function checkAdmin() {
                 const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    window.location.href = "login.html";
-                    return false;
-                }
+                if (!user) { window.location.href = "login.html"; return false; }
+                currentUser = user;
                 const { data: profile, error } = await supabase
                     .from('profiles')
                     .select('role')
@@ -118,13 +164,12 @@
                 return true;
             }
 
-            // ---------- Logout ----------
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await supabase.auth.signOut();
                 window.location.href = "index.html";
             });
 
-            // ---------- Load Employees ----------
+            // ---------- Load Employees with SA ID expiry ----------
             async function loadEmployees() {
                 try {
                     console.log('📋 Fetching employees...');
@@ -133,26 +178,49 @@
                         .select('*')
                         .order('full_name');
                     if (error) throw error;
-                    const tbody = document.querySelector('#employees-table tbody');
-                    if (!employees || employees.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No employees yet.</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = employees.map(emp => `
-                            <tr>
-                                <td>${emp.full_name}</td>
-                                <td>${emp.id_passport_number}</td>
-                                <td>${emp.nationality}</td>
-                                <td>${emp.job_position}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-warning edit-emp" data-id="${emp.id}"><i class="fas fa-edit"></i></button>
-                                    <button class="btn btn-sm btn-danger delete-emp" data-id="${emp.id}"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                        `).join('');
-                    // Attach events
-                    document.querySelectorAll('.edit-emp').forEach(btn => btn.addEventListener('click', () => editEmployee(btn.dataset.id)));
-                    document.querySelectorAll('.delete-emp').forEach(btn => btn.addEventListener('click', () => deleteEmployee(btn.dataset.id)));
+
+                    // Fetch SA ID documents for all employees
+                    const empIds = employees.map(e => e.id);
+                    const { data: docs, error: docErr } = await supabase
+                        .from('documents')
+                        .select('employee_id, expiry_date')
+                        .eq('doc_type', 'SA_ID')
+                        .in('employee_id', empIds);
+                    if (docErr) throw docErr;
+
+                    // Map employee_id -> expiry_date
+                    const expiryMap = {};
+                    docs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
+
+                    // Compute status
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const thirtyDaysLater = new Date(today);
+                    thirtyDaysLater.setDate(today.getDate() + 30);
+
+                    employees.forEach(emp => {
+                        const expiry = expiryMap[emp.id] || null;
+                        let status = 'missing';
+                        let statusText = 'Missing';
+                        let badgeClass = 'bg-secondary';
+                        let expiryDisplay = 'Not uploaded';
+                        if (expiry) {
+                            expiryDisplay = new Date(expiry).toLocaleDateString();
+                            const expDate = new Date(expiry);
+                            expDate.setHours(0,0,0,0);
+                            if (expDate < today) { status = 'expired'; statusText = 'Expired'; badgeClass = 'bg-danger'; }
+                            else if (expDate <= thirtyDaysLater) { status = 'expiring'; statusText = 'Expiring Soon'; badgeClass = 'bg-warning text-dark'; }
+                            else { status = 'valid'; statusText = 'Valid'; badgeClass = 'bg-success'; }
+                        }
+                        emp._expiry = expiry;
+                        emp._expiryDisplay = expiryDisplay;
+                        emp._status = status;
+                        emp._statusText = statusText;
+                        emp._badgeClass = badgeClass;
+                    });
+
+                    allEmployees = employees;
+                    renderTable(employees);
                     console.log('✅ Employees loaded:', employees.length);
                 } catch (err) {
                     console.error('❌ Error loading employees:', err);
@@ -160,16 +228,37 @@
                 }
             }
 
+            function renderTable(employees) {
+                const tbody = document.querySelector('#employees-table tbody');
+                if (!employees || employees.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No employees yet.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = employees.map(emp => `
+                    <tr>
+                        <td><strong>${emp.full_name}</strong></td>
+                        <td>${emp.id_passport_number}</td>
+                        <td>${emp.nationality}</td>
+                        <td>${emp.job_position}</td>
+                        <td>${emp._expiryDisplay}</td>
+                        <td><span class="badge ${emp._badgeClass} status-badge">${emp._statusText}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-warning edit-emp" data-id="${emp.id}"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger delete-emp" data-id="${emp.id}"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                document.querySelectorAll('.edit-emp').forEach(btn => btn.addEventListener('click', () => editEmployee(btn.dataset.id)));
+                document.querySelectorAll('.delete-emp').forEach(btn => btn.addEventListener('click', () => deleteEmployee(btn.dataset.id)));
+            }
+
             // ---------- Edit Employee ----------
             async function editEmployee(id) {
                 try {
-                    const { data: emp, error } = await supabase
-                        .from('employees')
-                        .select('*')
-                        .eq('id', id)
-                        .single();
-                    if (error) throw error;
+                    const emp = allEmployees.find(e => e.id == id);
                     if (!emp) return alert('Employee not found.');
+
                     document.getElementById('emp-id').value = emp.id;
                     document.getElementById('full-name').value = emp.full_name;
                     document.getElementById('id-number').value = emp.id_passport_number;
@@ -177,7 +266,9 @@
                     document.getElementById('phone').value = emp.phone;
                     document.getElementById('address').value = emp.address || '';
                     document.getElementById('position').value = emp.job_position;
-                    document.getElementById('emp-date').value = emp.employment_date.split('T')[0];
+                    document.getElementById('emp-date').value = emp.employment_date ? emp.employment_date.split('T')[0] : '';
+                    document.getElementById('sa-id-expiry').value = emp._expiry || '';
+
                     new bootstrap.Modal(document.getElementById('employeeModal')).show();
                 } catch (err) {
                     console.error('❌ Edit error:', err);
@@ -201,33 +292,84 @@
                 }
             }
 
-            // ---------- Save Employee (Add/Edit) ----------
+            // ---------- Save Employee (Add/Edit) with SA ID expiry ----------
             document.getElementById('employee-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const id = document.getElementById('emp-id').value;
                 const payload = {
                     full_name: document.getElementById('full-name').value.trim(),
                     id_passport_number: document.getElementById('id-number').value.trim(),
-                    nationality: document.getElementById('nationality').value.trim(),
+                    nationality: document.getElementById('nationality').value,
                     phone: document.getElementById('phone').value.trim(),
                     address: document.getElementById('address').value.trim(),
-                    job_position: document.getElementById('position').value.trim(),
+                    job_position: document.getElementById('position').value,
                     employment_date: document.getElementById('emp-date').value
                 };
+
+                const saIdExpiry = document.getElementById('sa-id-expiry').value;
+
                 try {
                     console.log('💾 Saving employee:', payload);
-                    let result;
+
+                    let employeeId;
                     if (id) {
-                        result = await supabase
+                        // Update employee
+                        const { error } = await supabase
                             .from('employees')
                             .update(payload)
                             .eq('id', id);
+                        if (error) throw error;
+                        employeeId = id;
                     } else {
-                        result = await supabase
+                        // Insert new employee
+                        const { data, error } = await supabase
                             .from('employees')
-                            .insert([payload]);
+                            .insert([payload])
+                            .select('id');
+                        if (error) throw error;
+                        employeeId = data[0].id;
                     }
-                    if (result.error) throw result.error;
+
+                    // Handle SA ID document expiry
+                    if (saIdExpiry) {
+                        // Check if a SA_ID document exists for this employee
+                        const { data: existingDoc, error: findErr } = await supabase
+                            .from('documents')
+                            .select('id')
+                            .eq('employee_id', employeeId)
+                            .eq('doc_type', 'SA_ID')
+                            .maybeSingle();
+
+                        if (findErr) throw findErr;
+
+                        if (existingDoc) {
+                            // Update expiry
+                            const { error: updateErr } = await supabase
+                                .from('documents')
+                                .update({ expiry_date: saIdExpiry })
+                                .eq('id', existingDoc.id);
+                            if (updateErr) throw updateErr;
+                        } else {
+                            // Insert new document record (no file)
+                            const { error: insertErr } = await supabase
+                                .from('documents')
+                                .insert([{
+                                    employee_id: employeeId,
+                                    doc_type: 'SA_ID',
+                                    file_path: 'manual', // placeholder
+                                    expiry_date: saIdExpiry,
+                                    uploaded_by: currentUser.id,
+                                    upload_date: new Date().toISOString(),
+                                    is_blurry: false,
+                                    is_incomplete: false
+                                }]);
+                            if (insertErr) throw insertErr;
+                        }
+                    } else {
+                        // If expiry is cleared, we could optionally delete the document or leave it without expiry.
+                        // We'll leave it for now.
+                    }
+
                     bootstrap.Modal.getInstance(document.getElementById('employeeModal')).hide();
                     document.getElementById('employee-form').reset();
                     document.getElementById('emp-id').value = '';
