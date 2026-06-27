@@ -161,7 +161,6 @@
         function setSelectAndOther(selectId, otherId, value) {
             const select = document.getElementById(selectId);
             const other = document.getElementById(otherId);
-            // Check if value matches any option (case‑insensitive)
             const options = select.options;
             let found = false;
             for (let i = 0; i < options.length; i++) {
@@ -193,21 +192,7 @@
 
             const container = document.getElementById('dashboard-content');
 
-            // ---------- Helpers (unchanged) ----------
-            async function getMissingDocuments(employeeId, nationality) {
-                try {
-                    const { data: docs } = await supabase
-                        .from('documents')
-                        .select('doc_type')
-                        .eq('employee_id', employeeId);
-                    const existing = docs.map(d => d.doc_type);
-                    const required = ['CONTRACT'];
-                    if (nationality === 'South Africa') required.push('SA_ID');
-                    else required.push('PASSPORT', 'WORK_PERMIT');
-                    return required.filter(t => !existing.includes(t));
-                } catch (e) { return []; }
-            }
-
+            // ---------- Helpers for old permit checks (not used for high-risk anymore) ----------
             async function getExpiredPermits(employeeId) {
                 try {
                     const today = new Date().toISOString().split('T')[0];
@@ -249,7 +234,6 @@
                     }
                     console.log('✅ Admin verified');
 
-                    // Build the UI with dropdowns in job form
                     container.innerHTML = `
                         <!-- Stats Cards -->
                         <div class="row g-3 mb-4">
@@ -257,13 +241,13 @@
                                 <div class="stat-card primary"><h5><i class="fas fa-users me-2"></i>Total Employees</h5><h2 id="total-employees">0</h2></div>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card success"><h5><i class="fas fa-check-circle me-2"></i>Compliant</h5><h2 id="compliant-count">0</h2></div>
+                                <div class="stat-card success"><h5><i class="fas fa-check-circle me-2"></i>Compliant (Valid SA ID)</h5><h2 id="compliant-count">0</h2></div>
                             </div>
                             <div class="col-md-3 col-sm-6">
                                 <div class="stat-card warning"><h5><i class="fas fa-clock me-2"></i>Expired Permits</h5><h2 id="expired-count">0</h2></div>
                             </div>
                             <div class="col-md-3 col-sm-6">
-                                <div class="stat-card danger"><h5><i class="fas fa-exclamation-triangle me-2"></i>High Risk</h5><h2 id="highrisk-count">0</h2></div>
+                                <div class="stat-card danger"><h5><i class="fas fa-exclamation-triangle me-2"></i>High Risk (Expired SA ID)</h5><h2 id="highrisk-count">0</h2></div>
                             </div>
                         </div>
 
@@ -272,13 +256,13 @@
                             <div class="col-12">
                                 <div class="card">
                                     <div class="card-header bg-danger text-white">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>High‑Risk Employees
+                                        <i class="fas fa-exclamation-triangle me-2"></i>High‑Risk Employees (Expired SA ID)
                                         <span class="badge bg-light text-dark ms-2" id="highrisk-badge">0</span>
                                     </div>
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
                                             <table class="table table-hover mb-0">
-                                                <thead><tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Risk Factors</th></tr></thead>
+                                                <thead><tr><th>Name</th><th>ID/Passport</th><th>Nationality</th><th>Risk Factor</th></tr></thead>
                                                 <tbody id="highrisk-tbody"><tr><td colspan="4" class="text-center text-muted">Loading...</td></tr></tbody>
                                             </table>
                                         </div>
@@ -327,7 +311,7 @@
                             </div>
                         </div>
 
-                        <!-- Post a New Job with dropdowns -->
+                        <!-- Post a New Job -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <div class="card">
@@ -412,7 +396,7 @@
                             </div>
                         </div>
 
-                        <!-- Manage Jobs Table (simplified) -->
+                        <!-- Manage Jobs -->
                         <div class="row">
                             <div class="col-12">
                                 <div class="card">
@@ -442,7 +426,6 @@
                     await loadRecentEmployees();
                     await loadJobsTable();
 
-                    // Set up form events
                     document.getElementById('job-posting-form').addEventListener('submit', handleJobPost);
                     document.getElementById('job-edit-form').addEventListener('submit', handleJobEdit);
 
@@ -457,7 +440,7 @@
                 }
             }
 
-            // ---------- Stats + High‑Risk ----------
+            // ---------- Stats + High‑Risk based on SA ID expiry ----------
             let complianceChart = null;
             async function loadStatsAndHighRisk() {
                 try {
@@ -466,63 +449,89 @@
                         .select('id, full_name, id_passport_number, nationality, job_position');
                     if (error) throw new Error('Failed to fetch employees: ' + error.message);
 
-                    const total = employees ? employees.length : 0;
-                    let compliant = 0, expiredCount = 0, highRisk = 0, missingDocs = 0;
+                    // Get SA ID documents for all employees
+                    const empIds = employees.map(e => e.id);
+                    const { data: saDocs, error: saErr } = await supabase
+                        .from('documents')
+                        .select('employee_id, expiry_date')
+                        .eq('doc_type', 'SA_ID')
+                        .in('employee_id', empIds);
+                    if (saErr) throw saErr;
+
+                    // Map employee_id -> expiry_date
+                    const expiryMap = {};
+                    saDocs.forEach(d => { expiryMap[d.employee_id] = d.expiry_date; });
+
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+
+                    let total = employees.length;
+                    let compliant = 0;
+                    let expiredSA = 0;
+                    let missingSA = 0;
                     let highRiskEmployees = [];
 
-                    let allAlerts = [];
-                    try {
-                        const { data } = await supabase.from('alerts').select('id, employee_id').eq('resolved', false);
-                        allAlerts = data || [];
-                    } catch (e) { console.warn('Alerts table missing:', e); }
+                    // Also count expired permits (for the separate stat card) – keep old logic
+                    let expiredPermitsCount = 0;
+                    for (const emp of employees) {
+                        // Expired permits (for info only)
+                        const expiredPermits = await getExpiredPermits(emp.id);
+                        expiredPermitsCount += expiredPermits.length;
 
-                    if (employees && employees.length) {
-                        for (const emp of employees) {
-                            const missing = await getMissingDocuments(emp.id, emp.nationality);
-                            const expired = await getExpiredPermits(emp.id);
-                            const unresolved = allAlerts.filter(a => a.employee_id === emp.id);
-                            let riskFactors = [];
-                            if (missing.length) { missingDocs++; riskFactors.push('Missing: ' + missing.join(', ')); }
-                            if (expired.length) { expiredCount += expired.length; riskFactors.push('Expired: ' + expired.map(p => p.doc_type).join(', ')); }
-                            if (unresolved.length) riskFactors.push('Active alert');
-                            if (riskFactors.length) {
-                                highRisk++;
-                                highRiskEmployees.push({ ...emp, riskFactors: riskFactors.join('; ') });
+                        // SA ID expiry logic
+                        const expiry = expiryMap[emp.id] || null;
+                        if (expiry) {
+                            const expDate = new Date(expiry);
+                            expDate.setHours(0,0,0,0);
+                            if (expDate < today) {
+                                // Expired – high risk
+                                expiredSA++;
+                                highRiskEmployees.push({
+                                    ...emp,
+                                    riskFactor: 'SA ID expired on ' + expDate.toLocaleDateString()
+                                });
                             } else {
+                                // Valid
                                 compliant++;
                             }
+                        } else {
+                            // Missing SA ID – treat as not compliant, not high risk? We'll count separately.
+                            missingSA++;
                         }
                     }
 
+                    // Stats
                     document.getElementById('total-employees').textContent = total;
                     document.getElementById('compliant-count').textContent = compliant;
-                    document.getElementById('expired-count').textContent = expiredCount;
-                    document.getElementById('highrisk-count').textContent = highRisk;
-                    document.getElementById('highrisk-badge').textContent = highRisk;
+                    document.getElementById('expired-count').textContent = expiredPermitsCount;
+                    document.getElementById('highrisk-count').textContent = expiredSA;
+                    document.getElementById('highrisk-badge').textContent = expiredSA;
 
+                    // High-risk table
                     const riskTbody = document.getElementById('highrisk-tbody');
                     if (highRiskEmployees.length === 0) {
-                        riskTbody.innerHTML = '<tr><td colspan="4" class="text-center text-success">✅ No high‑risk employees.</td></tr>';
+                        riskTbody.innerHTML = '<tr><td colspan="4" class="text-center text-success">✅ No employees with expired SA ID.</td></tr>';
                     } else {
                         riskTbody.innerHTML = highRiskEmployees.map(emp => `
                             <tr>
                                 <td><strong>${emp.full_name}</strong></td>
                                 <td>${emp.id_passport_number}</td>
                                 <td>${emp.nationality}</td>
-                                <td><span class="badge bg-danger risk-badge">${emp.riskFactors}</span></td>
+                                <td><span class="badge bg-danger">${emp.riskFactor}</span></td>
                             </tr>
                         `).join('');
                     }
 
+                    // Chart – show Compliant, Expired SA ID, Missing SA ID, and maybe Expired Permits? Keep it simple.
                     const ctx = document.getElementById('complianceChart').getContext('2d');
                     if (complianceChart) complianceChart.destroy();
                     complianceChart = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
-                            labels: ['Compliant', 'Expired Permits', 'Missing Docs', 'High Risk'],
+                            labels: ['Valid SA ID', 'Expired SA ID', 'Missing SA ID', 'Expired Permits (info)'],
                             datasets: [{
-                                data: [compliant, expiredCount, missingDocs, highRisk],
-                                backgroundColor: ['#1cc88a', '#f6c23e', '#fd7e14', '#e74a3b']
+                                data: [compliant, expiredSA, missingSA, expiredPermitsCount],
+                                backgroundColor: ['#1cc88a', '#e74a3b', '#fd7e14', '#f6c23e']
                             }]
                         },
                         options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
@@ -592,10 +601,9 @@
                 }
             }
 
-            // ---------- Job Posting (with dropdowns) ----------
+            // ---------- Job Posting (unchanged) ----------
             async function handleJobPost(e) {
                 e.preventDefault();
-                // Get values using helpers
                 const title = getFieldValue('job-title-select', 'job-title-other') || document.getElementById('job-title-other').value.trim();
                 const company = document.getElementById('job-company').value.trim();
                 const location = getFieldValue('job-location-select', 'job-location-other') || document.getElementById('job-location-other').value.trim();
@@ -629,7 +637,6 @@
                     if (error) throw error;
                     document.getElementById('job-post-feedback').innerHTML = `<div class="alert alert-success">✅ Job posted successfully!</div>`;
                     document.getElementById('job-posting-form').reset();
-                    // Reset other inputs visibility
                     document.querySelectorAll('.other-input').forEach(el => el.style.display = 'none');
                     loadJobsTable();
                 } catch (err) {
@@ -638,7 +645,7 @@
                 }
             }
 
-            // ---------- Load Jobs Table (simplified) ----------
+            // ---------- Load Jobs Table ----------
             async function loadJobsTable() {
                 const tbody = document.getElementById('jobs-table-body');
                 const countBadge = document.getElementById('job-count');
@@ -676,7 +683,7 @@
                 }
             }
 
-            // ---------- Edit / Update / Delete (with dropdowns) ----------
+            // ---------- Edit / Delete ----------
             async function openEditJobModal(jobId) {
                 try {
                     const { data: job, error } = await supabase
@@ -686,17 +693,12 @@
                         .single();
                     if (error) throw error;
                     document.getElementById('edit-job-id').value = job.id;
-
-                    // Set title
                     setSelectAndOther('edit-job-title-select', 'edit-job-title-other', job.title);
                     document.getElementById('edit-job-company').value = job.company;
-                    // Location
                     setSelectAndOther('edit-job-location-select', 'edit-job-location-other', job.location || '');
-                    // Salary
                     setSelectAndOther('edit-job-salary-select', 'edit-job-salary-other', job.salary || '');
                     document.getElementById('edit-job-status').value = job.status;
                     document.getElementById('edit-job-description').value = job.description || '';
-
                     new bootstrap.Modal(document.getElementById('jobEditModal')).show();
                 } catch (err) {
                     alert('Error loading job: ' + err.message);
@@ -712,7 +714,6 @@
                 const salary = getFieldValue('edit-job-salary-select', 'edit-job-salary-other') || document.getElementById('edit-job-salary-other').value.trim();
                 const description = document.getElementById('edit-job-description').value.trim();
                 const status = document.getElementById('edit-job-status').value;
-
                 const payload = { title, company, location, salary, description, status };
                 try {
                     const { error } = await supabase
